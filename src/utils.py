@@ -21,10 +21,10 @@ import getpass
 import http.client
 
 
-from .domain import Domain
-from .__init__ import __version__
-from .constants import * #pylint: disable=unused-wildcard-import,wildcard-import
-from .backports import match_hostname, CertificateError
+from domain import Domain
+import __init__
+from constants import * #pylint: disable=unused-wildcard-import,wildcard-import
+from le_backports import match_hostname, CertificateError
 
 try:
     import uuid
@@ -160,7 +160,10 @@ def write_default_cert_file(config):
     create_conf_dir(config)
     cert_filename = default_cert_file_name(config)
     cert_file = open(cert_filename, 'wb')
-    cert_file.write(get_bundled_certs())
+    if (os.name == 'nt'):
+        cert_file.write(get_bundled_certs().encode('cp1252'))
+    else:
+        cert_file.write(get_bundled_certs())
     cert_file.close()
 
 
@@ -538,7 +541,11 @@ def retrieve_account_key(config):
                     sys.stderr.write('Error: Unexpected login response from logentries (%s).'
                                      % resp_val)
             else:
-                data = json.loads(response.read())
+                s = response.read()
+                if not isinstance(s, str):
+                    data = json.loads(s.decode('utf8'))
+                else:
+                    data = json.loads(s)
                 return choose_account_key(data['accounts'])
         except socket.error as msg:
             sys.stderr.write('Error: Cannot contact server, %s' % msg)

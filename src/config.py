@@ -10,11 +10,11 @@ import stat
 import getopt
 import configparser as ConfigParser
 
-from . import metrics
-from . import utils
-from .log import log
-from .configured_log import ConfiguredLog
-from .constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+import metrics
+import utils
+import log
+from configured_log import ConfiguredLog
+from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 
 
 DEFAULT_USER_KEY = NOT_SET
@@ -345,7 +345,7 @@ class Config(object):
             if load_include_dirs and self.include:
                 config_files.extend(conf.read(self._list_configs(self.include)))
 
-            log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
+            log.log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
 
             self._load_parameters(conf)
 
@@ -388,7 +388,7 @@ class Config(object):
         try:
             conf = ConfigParser.SafeConfigParser()
             utils.create_conf_dir(self)
-            conf_file = open(self.config_filename, 'wb')
+            conf_file = open(self.config_filename, 'w')
             conf.add_section(MAIN_SECT)
             if self.user_key != NOT_SET:
                 conf.set(MAIN_SECT, USER_KEY_PARAM, self.user_key)
@@ -444,7 +444,7 @@ class Config(object):
         """
         if self.user_key == NOT_SET:
             if ask_for_it:
-                log.log.info(
+                log.log.log.info(
                     "Account key is required. Enter your Logentries login "
                     "credentials or specify the account key with "
                     "--account-key parameter.")
@@ -551,12 +551,15 @@ class Config(object):
         Identifies a configuration directory for the current user.
         Always terminated with slash.
         """
-        if os.geteuid() == 0:
-            # Running as root
-            c_dir = CONFIG_DIR_SYSTEM
+        if os.name == 'nt':
+            c_dir = os.getcwd()
         else:
-            # Running as an ordinary user
-            c_dir = os.path.expanduser('~') + '/' + CONFIG_DIR_USER
+            if os.geteuid() == 0:
+                # Running as root
+                c_dir = CONFIG_DIR_SYSTEM
+            else:
+                # Running as an ordinary user
+                c_dir = os.path.expanduser('~') + '/' + CONFIG_DIR_USER
 
         return c_dir + '/'
 

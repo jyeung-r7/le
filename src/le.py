@@ -37,17 +37,18 @@ try:
 except ImportError:
     pass
 
-from . import formats
-from . import socks
-from . import utils
-from . import metrics
-from .config import Config, FatalConfigurationError
-from .followers import Follower, MultilogFollower
-from .log import log as log_object
-from .domain import Domain
-from .backports import CertificateError, match_hostname
-from .datetime_utils import parse_timestamp_range
-from .constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+
+import formats
+import socks
+import utils
+import metrics
+from config import Config, FatalConfigurationError
+from followers import Follower, MultilogFollower
+from log import log as log_object
+from domain import Domain
+from le_backports import CertificateError, match_hostname
+from datetime_utils import parse_timestamp_range
+from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 
 # Explicitely set umask to allow user rw + group read
