@@ -1043,7 +1043,10 @@ def check_file_name(file_name):
     2) the path starts with '/' character which indicates that the log has
     a "physical" path which starts from filesystem root.
     """
-    return file_name.startswith('/')
+    if os.name == 'nt':
+        return True
+    else:
+        return file_name.startswith('/')
 
 
 def get_filters(available_filters, filter_filenames, log_name, log_id, log_filename, log_token):
@@ -1170,9 +1173,12 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    if 'log' in log_ and log_['log']['source_type'] is 'token':
-        return log_['log']['token_seed']
-    else:
+    try:
+        if 'log' in log_ and log_['log']['source_type'] is 'token':
+            return log_['log']['tokens_seed']
+        else:
+            return None
+    except KeyError:
         return None
 
 

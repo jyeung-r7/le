@@ -185,7 +185,7 @@ def default_cert_file(config):
             write_default_cert_file(config)
     except IOError:
         # Cannot read/write certificate file, ignore
-        return None
+        pass
     return cert_filename
 
 
