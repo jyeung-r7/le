@@ -345,7 +345,7 @@ class Config(object):
             if load_include_dirs and self.include:
                 config_files.extend(conf.read(self._list_configs(self.include)))
 
-            log.log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
+            log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
 
             self._load_parameters(conf)
 
@@ -444,7 +444,7 @@ class Config(object):
         """
         if self.user_key == NOT_SET:
             if ask_for_it:
-                log.log.log.info(
+                log.log.info(
                     "Account key is required. Enter your Logentries login "
                     "credentials or specify the account key with "
                     "--account-key parameter.")
