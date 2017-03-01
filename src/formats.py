@@ -18,7 +18,12 @@ class FormatPlain(object):
 
     def format_line(self, line):
         """Formats the given line"""
-        return self._token + line
+        if self._token:
+            formattedLine = self._token + line
+        else:
+            formattedLine = line
+
+        return formattedLine
 
 
 class FormatSyslog(object):

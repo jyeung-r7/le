@@ -37,17 +37,17 @@ try:
 except ImportError:
     pass
 
-from . import formats
-from . import socks
-from . import utils
-from . import metrics
-from .config import Config, FatalConfigurationError
-from .followers import Follower, MultilogFollower
-from .log import log as log_object
-from .domain import Domain
-from .backports import CertificateError, match_hostname
-from .datetime_utils import parse_timestamp_range
-from .constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+import formats
+import socks
+import utils
+import metrics
+from config import Config, FatalConfigurationError
+from followers import Follower, MultilogFollower
+from log import log as log_object
+from domain import Domain
+from le_backports import CertificateError, match_hostname
+from datetime_utils import parse_timestamp_range
+from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 
 # Explicitely set umask to allow user rw + group read
@@ -1169,11 +1169,11 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    if 'log' in log_ and log_['log']['source_type'] is 'token':
-        return log_['log']['token_seed']
-    else:
+    try:
+        if 'log' in log_ and log_['log']['source_type'] is 'token':
+            return log_['log']['token_seed']
+    except:
         return None
-
 
 def construct_configured_log(configured_log):
     """Create a configured log object"""
