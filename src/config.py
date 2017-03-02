@@ -647,20 +647,22 @@ class Config(object):
         self.configured_logs = []
         logList = conf.get(CONFIG_LOGS)
         for section in logList:
-            if name != MAIN_SECT:
                 token = ''
+                name = section.get(name)
                 try:
-                    xtoken = conf.get(name, TOKEN_PARAM)
-                    if xtoken:
-                        token = utils.uuid_parse(xtoken)
-                        if not token:
-                            log.log.warning("Invalid log token `%s' in application `%s'.",
+                    if TOKEN_PARAM in section:
+                        xtoken = section.get(TOKEN_PARAM)
+                        if xtoken:
+                            token = utils.uuid_parse(xtoken)
+                            if not token:
+                                log.log.warning("Invalid log token `%s' in application `%s'.",
                                             xtoken, name)
                 except ConfigParser.NoOptionError:
                     pass
 
                 try:
-                    path = conf.get(name, PATH_PARAM)
+                    if PATH_PARAM in section:
+                        path = section.get(PATH_PARAM)
                 except ConfigParser.NoOptionError:
                     log.log.debug("Not following logs for application `%s' as `%s' "
                                   "parameter is not specified", name, PATH_PARAM)
