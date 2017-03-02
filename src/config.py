@@ -668,18 +668,18 @@ class Config(object):
                                   "parameter is not specified", name, PATH_PARAM)
                     continue
 
-                destination = self._try_load_param(conf, name, DESTINATION_PARAM)
-                formatter = self._try_load_param(conf, name, FORMATTER_PARAM)
-                entry_identifier = self._try_load_param(conf, name, ENTRY_IDENTIFIER_PARAM)
+                destination = self._try_load_param(section, DESTINATION_PARAM)
+                formatter = self._try_load_param(section, FORMATTER_PARAM)
+                entry_identifier = self._try_load_param(section, ENTRY_IDENTIFIER_PARAM)
 
                 configured_log = ConfiguredLog(name, token,
                                                destination, path, formatter, entry_identifier)
                 self.configured_logs.append(configured_log)
 
-    def _try_load_param(self, conf, name, key):
+    def _try_load_param(self, conf, key):
         """Try to load a given parameter"""
         try:
-            param = conf.get(name, key)
+            param = conf.get(key)
             return param
         except ConfigParser.NoOptionError:
             return ''
