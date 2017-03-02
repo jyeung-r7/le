@@ -639,7 +639,7 @@ class MetricsConfig(object):
         metricDict = conf.get(METRIC)
         for item in self.DEFAULTS:
             try:
-                self.__dict__[item] = conf.get(PREFIX + item)
+                self.__dict__[item] = metricDict.get(PREFIX + item)
             except ConfigParser.NoOptionError:
                 pass
         # Process metrics
