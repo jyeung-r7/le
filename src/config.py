@@ -54,6 +54,7 @@ LE_DEFAULT_NON_SSL_PORT = 10000
 CONFIG_FILE = '/etc/le/config.json'
 CONFIG_PARAM = 'config'
 CONFIG_LOGS = 'logs'
+LOG_NAME = 'name'
 
 
 class FatalConfigurationError(Exception):
@@ -375,7 +376,7 @@ class Config(object):
 
             # self.metrics.load(conf)
 
-            self._load_configured_logs(conf)
+            self._load_configured_logs(d_configFile)
 
         except (ConfigParser.NoSectionError,
                 ConfigParser.NoOptionError,
@@ -648,7 +649,7 @@ class Config(object):
         logList = conf.get(CONFIG_LOGS)
         for section in logList:
                 token = ''
-                name = section.get(name)
+                name = section.get(LOG_NAME)
                 try:
                     if TOKEN_PARAM in section:
                         xtoken = section.get(TOKEN_PARAM)
@@ -679,8 +680,9 @@ class Config(object):
     def _try_load_param(self, conf, key):
         """Try to load a given parameter"""
         try:
-            param = conf.get(key)
-            return param
+            if key in conf:
+                param = conf.get(key)
+                return param
         except ConfigParser.NoOptionError:
             return ''
 
