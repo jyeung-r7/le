@@ -12,6 +12,7 @@ import configparser as ConfigParser
 
 import metrics
 import utils
+import json
 from log import log
 from configured_log import ConfiguredLog
 from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
@@ -29,7 +30,7 @@ LOCAL_CONFIG_DIR_SYSTEM = '/etc/le'
 MAIN_SECT = 'Main'
 USER_KEY_PARAM = 'user-key'
 AGENT_KEY_PARAM = 'agent-key'
-API_KEY_PARAM = 'api-key'
+API_KEY_PARAM = 'read-write-key'
 FILTERS_PARAM = 'filters'
 FORMATTERS_PARAM = 'formatters'
 FORMATTER_PARAM = 'formatter'
@@ -50,6 +51,9 @@ PROXY_PORT_PARAM = "proxy-port"
 KEY_LEN = 36
 LE_DEFAULT_SSL_PORT = 20000
 LE_DEFAULT_NON_SSL_PORT = 10000
+CONFIG_FILE = '/etc/le/config.json'
+CONFIG_PARAM = 'config'
+CONFIG_LOGS = 'logs'
 
 
 class FatalConfigurationError(Exception):
@@ -303,6 +307,7 @@ class Config(object):
         """
 
         try:
+            """
             conf = ConfigParser.SafeConfigParser({
                 USER_KEY_PARAM: '',
                 AGENT_KEY_PARAM: '',
@@ -324,6 +329,7 @@ class Config(object):
                 PROXY_URL_PARAM: '',
                 PROXY_PORT_PARAM: '',
             })
+            """
 
             # Read configuration files from default directories
             config_files = [self.config_filename]
@@ -332,45 +338,42 @@ class Config(object):
 
             self._set_config_file_perms(config_files)
 
-            conf.read(config_files)
-
-            # Fail if no configuration file exist
-            if not conf.has_section(MAIN_SECT):
-                return False
+            # Read in json config file
+            d_conf = json.loads(open(CONFIG_FILE).read())
+            d_configFile = d_conf[CONFIG_PARAM]
 
             # Get optional user-provided configuration directory
-            self.include = self._get_if_def(conf, self.include, INCLUDE_PARAM)
+            self.include = d_configFile.get(INCLUDE_PARAM)
 
             # Load configuration files from user-provided directory
             if load_include_dirs and self.include:
-                config_files.extend(conf.read(self._list_configs(self.include)))
+                config_files.extend(json.loads(open(self._list_configs(self.include)).read()))
 
             log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
 
-            self._load_parameters(conf)
+            self._load_parameters(d_configFile)
 
-            self._configure_proxy(conf)
+            self._configure_proxy(d_configFile)
 
-            new_suppress_ssl = conf.get(MAIN_SECT, SUPPRESS_SSL_PARAM)
+            new_suppress_ssl = d_configFile.get(SUPPRESS_SSL_PARAM)
             if new_suppress_ssl == 'True':
                 self.suppress_ssl = new_suppress_ssl == 'True'
-            new_force_domain = conf.get(MAIN_SECT, FORCE_DOMAIN_PARAM)
+            new_force_domain = d_configFile.get(FORCE_DOMAIN_PARAM)
             if new_force_domain:
                 self.force_domain = new_force_domain
             if self.datahub == NOT_SET:
                 self._set_datahub_settings(
-                    conf.get(MAIN_SECT, DATAHUB_PARAM), should_die=False)
+                    d_configFile.get(DATAHUB_PARAM), should_die=False)
             if self.system_stats_token == NOT_SET:
-                system_stats_token_str = conf.get(
-                    MAIN_SECT, SYSSTAT_TOKEN_PARAM)
+                system_stats_token_str = d_configFile.get(SYSSTAT_TOKEN_PARAM)
                 if system_stats_token_str != '':
                     self.system_stats_token = system_stats_token_str
             if self.state_file == NOT_SET:
-                state_file_str = conf.get(MAIN_SECT, STATE_FILE_PARAM)
+                state_file_str = d_configFile.get(STATE_FILE_PARAM)
                 if state_file_str:
                     self.state_file = state_file_str
 
-            self.metrics.load(conf)
+            # self.metrics.load(conf)
 
             self._load_configured_logs(conf)
 
@@ -589,17 +592,16 @@ class Config(object):
 
     def _load_parameters(self, conf):
         """Load parameters from config file provided"""
-        self.user_key = self._get_if_def(conf, self.user_key, USER_KEY_PARAM)
-        self.agent_key = self._get_if_def(conf, self.agent_key, AGENT_KEY_PARAM)
-        self.api_key = self._get_if_def(conf, self.api_key, API_KEY_PARAM)
-        self.filters = self._get_if_def(conf, self.filters, FILTERS_PARAM)
-        self.formatters = self._get_if_def(conf, self.formatters, FORMATTERS_PARAM)
-        self.formatter = self._get_if_def(conf, self.formatter, FORMATTER_PARAM)
-        self.entry_identifier = self._get_if_def(
-            conf, self.entry_identifier, ENTRY_IDENTIFIER_PARAM)
-        self.hostname = self._get_if_def(conf, self.hostname, HOSTNAME_PARAM)
+        self.user_key = conf.get(USER_KEY_PARAM)
+        self.agent_key = conf.get(AGENT_KEY_PARAM)
+        self.api_key = conf.get(API_KEY_PARAM)
+        self.filters = conf.get(FILTERS_PARAM)
+        self.formatters = conf.get(FORMATTERS_PARAM)
+        self.formatter = conf.get(FORMATTER_PARAM)
+        self.entry_identifier = conf.get(ENTRY_IDENTIFIER_PARAM)
+        self.hostname = conf.get(HOSTNAME_PARAM)
         if self.pull_server_side_config == NOT_SET:
-            new_pull_server_side_config = conf.get(MAIN_SECT, PULL_SERVER_SIDE_CONFIG_PARAM)
+            new_pull_server_side_config = conf.get(PULL_SERVER_SIDE_CONFIG_PARAM)
             self.pull_server_side_config = new_pull_server_side_config == 'True'
             if new_pull_server_side_config is None:
                 self.pull_server_side_config = True
@@ -607,15 +609,15 @@ class Config(object):
     def _configure_proxy(self, conf):
         """Load proxy configuration settings from config file provided"""
         if self.proxy_type is NOT_SET:
-            self.proxy_type = conf.get(MAIN_SECT, PROXY_TYPE_PARAM)
+            self.proxy_type = conf.get(PROXY_TYPE_PARAM)
             if not self.proxy_type:
                 self.proxy_type = NOT_SET
         if self.proxy_url is NOT_SET:
-            self.proxy_url = conf.get(MAIN_SECT, PROXY_URL_PARAM)
+            self.proxy_url = conf.get(PROXY_URL_PARAM)
             if not self.proxy_url:
                 self.proxy_url = NOT_SET
         if self.proxy_port is NOT_SET:
-            proxy_port = conf.get(MAIN_SECT, PROXY_PORT_PARAM)
+            proxy_port = conf.get(PROXY_PORT_PARAM)
             if not proxy_port:
                 self.proxy_port = NOT_SET
             else:
@@ -643,8 +645,8 @@ class Config(object):
         These are logs that use tokens.
         """
         self.configured_logs = []
-
-        for name in conf.sections():
+        logList = conf.get(CONFIG_LOGS)
+        for section in logList:
             if name != MAIN_SECT:
                 token = ''
                 try:
