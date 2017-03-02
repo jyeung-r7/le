@@ -308,30 +308,7 @@ class Config(object):
         """
 
         try:
-            """
-            conf = ConfigParser.SafeConfigParser({
-                USER_KEY_PARAM: '',
-                AGENT_KEY_PARAM: '',
-                API_KEY_PARAM: '',
-                FILTERS_PARAM: '',
-                FORMATTERS_PARAM: '',
-                FORMATTER_PARAM: '',
-                ENTRY_IDENTIFIER_PARAM: '',
-                SUPPRESS_SSL_PARAM: '',
-                FORCE_DOMAIN_PARAM: '',
-                USE_CA_PROVIDED_PARAM: '',
-                DATAHUB_PARAM: '',
-                SYSSTAT_TOKEN_PARAM: '',
-                STATE_FILE_PARAM: '',
-                HOSTNAME_PARAM: '',
-                PULL_SERVER_SIDE_CONFIG_PARAM: 'False',
-                INCLUDE_PARAM: '',
-                PROXY_TYPE_PARAM: '',
-                PROXY_URL_PARAM: '',
-                PROXY_PORT_PARAM: '',
-            })
-            """
-
+            PULL_SERVER_SIDE_CONFIG_PARAM = 'False'
             # Read configuration files from default directories
             config_files = [self.config_filename]
             if load_include_dirs:
@@ -391,6 +368,7 @@ class Config(object):
         """
         try:
             conf = ConfigParser.SafeConfigParser()
+
             utils.create_conf_dir(self)
             conf_file = open(self.config_filename, 'wb')
             conf.add_section(MAIN_SECT)
