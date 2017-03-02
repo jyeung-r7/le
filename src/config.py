@@ -318,7 +318,7 @@ class Config(object):
                 SYSSTAT_TOKEN_PARAM: '',
                 STATE_FILE_PARAM: '',
                 HOSTNAME_PARAM: '',
-                PULL_SERVER_SIDE_CONFIG_PARAM: 'True',
+                PULL_SERVER_SIDE_CONFIG_PARAM: 'False',
                 INCLUDE_PARAM: '',
                 PROXY_TYPE_PARAM: '',
                 PROXY_URL_PARAM: '',

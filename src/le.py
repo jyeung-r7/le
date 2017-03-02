@@ -1171,7 +1171,7 @@ def extract_token(log_):
     """Extract the log token value if it exists"""
     try:
         if 'log' in log_ and log_['log']['source_type'] is 'token':
-            return log_['log']['token_seed']
+            return log_['log']['tokens'][0]
     except:
         return None
 
