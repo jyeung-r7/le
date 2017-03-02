@@ -572,7 +572,7 @@ class Transport(object):
             try:
                 self._entries.put_nowait(entry)
                 break
-            except Queue.Full: #pylint: disable=no-member
+            except Queue.QueueFull: #pylint: disable=no-member
                 try:
                     self._entries.get_nowait()
                 except queue.Empty:
@@ -1175,7 +1175,7 @@ def extract_token(log_):
     """Extract the log token value if it exists"""
     try:
         if 'log' in log_ and log_['log']['source_type'] is 'token':
-            return log_['log']['tokens_seed']
+            return log_['log']['tokens'][0]
         else:
             return None
     except KeyError:
@@ -1442,6 +1442,10 @@ class TerminationNotifier(object):
     def signal_callback(self, signum, frame):
         """Sets terminate to true"""
         self.terminate = True
+
+def cmd_monitor_no_server_config(args):
+    CONFIG.pull_server_side_config=False
+    cmd_monitor(args)
 
 
 def cmd_monitor(args):
