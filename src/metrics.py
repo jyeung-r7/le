@@ -29,6 +29,7 @@ except ImportError:
 SECT = 'Main'
 # Common option prefix
 PREFIX = 'metrics-'
+METRIC = 'metrics'
 
 # Configuration names
 TOKEN = 'token'
@@ -635,26 +636,25 @@ class MetricsConfig(object):
     def load(self, conf):
         """Loads metrics configuration."""
         # Basic metrics
+        metricDict = conf.get(METRIC)
         for item in self.DEFAULTS:
             try:
-                self.__dict__[item] = conf.get(SECT, PREFIX + item)
+                self.__dict__[item] = conf.get(PREFIX + item)
             except ConfigParser.NoOptionError:
                 pass
         # Process metrics
-        for section in conf.sections():
-            if section != SECT:
+        try:
+            try:
+                token = metricDict.get(PREFIX + TOKEN)
+            except ConfigParser.NoOptionError:
                 try:
-                    try:
-                        token = conf.get(section, PREFIX + TOKEN)
-                    except ConfigParser.NoOptionError:
-                        try:
-                            token = conf.get(section, TOKEN)
-                        except ConfigParser.NoOptionError:
-                            token = ''
-                    pattern = conf.get(section, PREFIX + PROCESS)
-                    self.processes.append([section, pattern, token])
+                    token = metricDict.get(TOKEN)
                 except ConfigParser.NoOptionError:
-                    pass
+                    token = ''
+            pattern = metricDict.get(PREFIX + PROCESS)
+            self.processes.append([item, pattern, token])
+        except ConfigParser.NoOptionError:
+            pass
 
     def save(self, conf):
         """Saves all metrics conficuration."""

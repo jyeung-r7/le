@@ -351,7 +351,7 @@ class Config(object):
                 if state_file_str:
                     self.state_file = state_file_str
 
-            # self.metrics.load(conf)
+            self.metrics.load(d_configFile)
 
             self._load_configured_logs(d_configFile)
 
