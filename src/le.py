@@ -58,6 +58,13 @@ os.umask(stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
 CONFIG = Config()
 LOG = log_object.log
 
+
+def _set_log(log):
+    if log is not None:
+        global LOG
+        LOG = log
+
+
 def _debug_filters(msg, *args):
     """Print debug filters"""
     if CONFIG.debug_filters:
@@ -1443,9 +1450,11 @@ class TerminationNotifier(object):
         """Sets terminate to true"""
         self.terminate = True
 
-def cmd_monitor_no_server_config(args):
-    CONFIG.pull_server_side_config=False
-    cmd_monitor(args)
+
+def cmd_monitor_no_server_config(log):
+    CONFIG.pull_server_side_config = False
+    _set_log(log)
+    cmd_monitor('')
 
 
 def cmd_monitor(args):
