@@ -357,7 +357,7 @@ class Config(object):
 
             self.metrics.load(d_configFile)
 
-            self._load_configured_logs(d_configFile)
+            self._load_configured_logs_json(d_configFile)
 
         except ValueError:
             print('JSON load error')
@@ -444,7 +444,7 @@ class Config(object):
 
             self.metrics.load(conf)
 
-            self._load_configured_logs(conf)
+            self._load_configured_logs_ini(conf)
 
         except (ConfigParser.NoSectionError,
                 ConfigParser.NoOptionError,
@@ -751,7 +751,7 @@ class Config(object):
                 log.log.warn('Could not adjust permissions for config file %s',
                              _config, exc_info=True)
 
-    def _load_configured_logs(self, conf):
+    def _load_configured_logs_json(self, conf):
         """
         Loads configured logs from the configuration file.
         These are logs that use tokens.
@@ -783,6 +783,41 @@ class Config(object):
                 destination = self._try_load_param(section, DESTINATION_PARAM)
                 formatter = self._try_load_param(section, FORMATTER_PARAM)
                 entry_identifier = self._try_load_param(section, ENTRY_IDENTIFIER_PARAM)
+
+                configured_log = ConfiguredLog(name, token,
+                                               destination, path, formatter, entry_identifier)
+                self.configured_logs.append(configured_log)
+
+    def _load_configured_logs_ini(self, conf):
+        """
+        Loads configured logs from the configuration file.
+        These are logs that use tokens.
+        """
+        self.configured_logs = []
+
+        for name in conf.sections():
+            if name != MAIN_SECT:
+                token = ''
+                try:
+                    xtoken = conf.get(name, TOKEN_PARAM)
+                    if xtoken:
+                        token = utils.uuid_parse(xtoken)
+                        if not token:
+                            log.log.warning("Invalid log token `%s' in application `%s'.",
+                                            xtoken, name)
+                except ConfigParser.NoOptionError:
+                    pass
+
+                try:
+                    path = conf.get(name, PATH_PARAM)
+                except ConfigParser.NoOptionError:
+                    log.log.debug("Not following logs for application `%s' as `%s' "
+                                  "parameter is not specified", name, PATH_PARAM)
+                    continue
+
+                destination = self._try_load_param(conf, name, DESTINATION_PARAM)
+                formatter = self._try_load_param(conf, name, FORMATTER_PARAM)
+                entry_identifier = self._try_load_param(conf, name, ENTRY_IDENTIFIER_PARAM)
 
                 configured_log = ConfiguredLog(name, token,
                                                destination, path, formatter, entry_identifier)
