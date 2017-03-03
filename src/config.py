@@ -327,7 +327,9 @@ class Config(object):
 
             # Load configuration files from user-provided directory
             if load_include_dirs and self.include:
-                config_files.extend(json.loads(open(self._list_configs(self.include)).read()))
+                with open(self._list_configs(self.include)) as config_data:
+                    config_files.extend(json.loads(config_data).read())
+
 
             log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
 
