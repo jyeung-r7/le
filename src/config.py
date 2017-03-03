@@ -296,7 +296,7 @@ class Config(object):
                 return False
         return True
 
-    def load(self, load_include_dirs=True):
+    def load_json(self, load_include_dirs=True):
         """
         Initializes configuration parameters from the configuration
         file.  Returns True if successful, False otherwise. Does not
@@ -544,6 +544,11 @@ class Config(object):
             c_dir = os.path.expanduser('~') + '/' + CONFIG_DIR_USER
 
         return c_dir + '/'
+
+    # def _get_config_name()
+    # create method to identify which config file format is used (ini/json)
+    # <to be completed>
+
 
     @staticmethod
     def _list_configs(path):

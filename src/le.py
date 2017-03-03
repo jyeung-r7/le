@@ -1442,6 +1442,7 @@ def cmd_monitor(args):
     infrastructure.
     """
     utils.no_more_args(args)
+    # execute if statement here to use appropriate load method (for ini or config file)
     CONFIG.load()
 
     # We need account and host ID to get server side configuration
