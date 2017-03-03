@@ -364,6 +364,95 @@ class Config(object):
 
         return True
 
+    def load_ini(self, load_include_dirs=True):
+        """
+        Initializes configuration parameters from the configuration
+        file.  Returns True if successful, False otherwise. Does not
+        touch already defined parameters.
+        Args:
+          load_include_dirs (bool): specify if files from the include
+                                    directory are loaded
+        """
+
+        try:
+            conf = ConfigParser.SafeConfigParser({
+                USER_KEY_PARAM: '',
+                AGENT_KEY_PARAM: '',
+                API_KEY_PARAM: '',
+                FILTERS_PARAM: '',
+                FORMATTERS_PARAM: '',
+                FORMATTER_PARAM: '',
+                ENTRY_IDENTIFIER_PARAM: '',
+                SUPPRESS_SSL_PARAM: '',
+                FORCE_DOMAIN_PARAM: '',
+                USE_CA_PROVIDED_PARAM: '',
+                DATAHUB_PARAM: '',
+                SYSSTAT_TOKEN_PARAM: '',
+                STATE_FILE_PARAM: '',
+                HOSTNAME_PARAM: '',
+                PULL_SERVER_SIDE_CONFIG_PARAM: 'True',
+                INCLUDE_PARAM: '',
+                PROXY_TYPE_PARAM: '',
+                PROXY_URL_PARAM: '',
+                PROXY_PORT_PARAM: '',
+            })
+
+            # Read configuration files from default directories
+            config_files = [self.config_filename]
+            if load_include_dirs:
+                config_files.extend(self._list_configs(self.config_d))
+
+            self._set_config_file_perms(config_files)
+
+            conf.read(config_files)
+
+            # Fail if no configuration file exist
+            if not conf.has_section(MAIN_SECT):
+                return False
+
+            # Get optional user-provided configuration directory
+            self.include = self._get_if_def(conf, self.include, INCLUDE_PARAM)
+
+            # Load configuration files from user-provided directory
+            if load_include_dirs and self.include:
+                config_files.extend(conf.read(self._list_configs(self.include)))
+
+            log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
+
+            self._load_parameters(conf)
+
+            self._configure_proxy(conf)
+
+            new_suppress_ssl = conf.get(MAIN_SECT, SUPPRESS_SSL_PARAM)
+            if new_suppress_ssl == 'True':
+                self.suppress_ssl = new_suppress_ssl == 'True'
+            new_force_domain = conf.get(MAIN_SECT, FORCE_DOMAIN_PARAM)
+            if new_force_domain:
+                self.force_domain = new_force_domain
+            if self.datahub == NOT_SET:
+                self._set_datahub_settings(
+                    conf.get(MAIN_SECT, DATAHUB_PARAM), should_die=False)
+            if self.system_stats_token == NOT_SET:
+                system_stats_token_str = conf.get(
+                    MAIN_SECT, SYSSTAT_TOKEN_PARAM)
+                if system_stats_token_str != '':
+                    self.system_stats_token = system_stats_token_str
+            if self.state_file == NOT_SET:
+                state_file_str = conf.get(MAIN_SECT, STATE_FILE_PARAM)
+                if state_file_str:
+                    self.state_file = state_file_str
+
+            self.metrics.load(conf)
+
+            self._load_configured_logs(conf)
+
+        except (ConfigParser.NoSectionError,
+                ConfigParser.NoOptionError,
+                ConfigParser.MissingSectionHeaderError) as error:
+            raise FatalConfigurationError('%s' % error)
+        return True
+
+
     def save(self):  # pylint: disable=too-many-branches
         """
         Saves configuration parameters into the configuration file.
