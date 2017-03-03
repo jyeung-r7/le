@@ -317,7 +317,9 @@ class Config(object):
             self._set_config_file_perms(config_files)
 
             # Read in json config file
-            d_conf = json.loads(open(config_files[0]).read())
+            with open(config_files[0]) as data_file:
+                d_conf = json.loads(data_file.read())
+
             d_configFile = d_conf[CONFIG_PARAM]
 
             # Get optional user-provided configuration directory
@@ -355,10 +357,9 @@ class Config(object):
 
             self._load_configured_logs(d_configFile)
 
-        except (ConfigParser.NoSectionError,
-                ConfigParser.NoOptionError,
-                ConfigParser.MissingSectionHeaderError) as error:
-            raise FatalConfigurationError('%s' % error)
+        except ValueError:
+            print('JSON load error')
+
         return True
 
     def save(self):  # pylint: disable=too-many-branches
@@ -636,13 +637,13 @@ class Config(object):
                             if not token:
                                 log.log.warning("Invalid log token `%s' in application `%s'.",
                                             xtoken, name)
-                except ConfigParser.NoOptionError:
+                except ValueError:
                     pass
 
                 try:
                     if PATH_PARAM in section:
                         path = section.get(PATH_PARAM)
-                except ConfigParser.NoOptionError:
+                except ValueError:
                     log.log.debug("Not following logs for application `%s' as `%s' "
                                   "parameter is not specified", name, PATH_PARAM)
                     continue

@@ -640,20 +640,20 @@ class MetricsConfig(object):
         for item in self.DEFAULTS:
             try:
                 self.__dict__[item] = metricDict.get(PREFIX + item)
-            except ConfigParser.NoOptionError:
+            except ValueError:
                 pass
         # Process metrics
         try:
             try:
                 token = metricDict.get(PREFIX + TOKEN)
-            except ConfigParser.NoOptionError:
+            except ValueError:
                 try:
                     token = metricDict.get(TOKEN)
-                except ConfigParser.NoOptionError:
+                except ValueError:
                     token = ''
             pattern = metricDict.get(PREFIX + PROCESS)
             self.processes.append([item, pattern, token])
-        except ConfigParser.NoOptionError:
+        except ValueError:
             pass
 
     def save(self, conf):
