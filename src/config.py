@@ -333,7 +333,7 @@ class Config(object):
 
             log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
 
-            self._load_parameters(d_configFile)
+            self._load_parameters_json(d_configFile)
 
             self._configure_proxy(d_configFile)
 
@@ -419,7 +419,7 @@ class Config(object):
 
             log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
 
-            self._load_parameters(conf)
+            self._load_parameters_ini(conf)
 
             self._configure_proxy(conf)
 
@@ -666,7 +666,7 @@ class Config(object):
         """
         return len(key) == KEY_LEN
 
-    def _load_parameters(self, conf):
+    def _load_parameters_json(self, conf):
         """Load parameters from config file provided"""
         self.user_key = conf.get(USER_KEY_PARAM)
         self.agent_key = conf.get(AGENT_KEY_PARAM)
@@ -678,6 +678,23 @@ class Config(object):
         self.hostname = conf.get(HOSTNAME_PARAM)
         if self.pull_server_side_config == NOT_SET:
             new_pull_server_side_config = conf.get(PULL_SERVER_SIDE_CONFIG_PARAM)
+            self.pull_server_side_config = new_pull_server_side_config == 'True'
+            if new_pull_server_side_config is None:
+                self.pull_server_side_config = True
+
+    def _load_parameters_ini(self, conf):
+        """Load parameters from config file provided"""
+        self.user_key = self._get_if_def(conf, self.user_key, USER_KEY_PARAM)
+        self.agent_key = self._get_if_def(conf, self.agent_key, AGENT_KEY_PARAM)
+        self.api_key = self._get_if_def(conf, self.api_key, API_KEY_PARAM)
+        self.filters = self._get_if_def(conf, self.filters, FILTERS_PARAM)
+        self.formatters = self._get_if_def(conf, self.formatters, FORMATTERS_PARAM)
+        self.formatter = self._get_if_def(conf, self.formatter, FORMATTER_PARAM)
+        self.entry_identifier = self._get_if_def(
+            conf, self.entry_identifier, ENTRY_IDENTIFIER_PARAM)
+        self.hostname = self._get_if_def(conf, self.hostname, HOSTNAME_PARAM)
+        if self.pull_server_side_config == NOT_SET:
+            new_pull_server_side_config = conf.get(MAIN_SECT, PULL_SERVER_SIDE_CONFIG_PARAM)
             self.pull_server_side_config = new_pull_server_side_config == 'True'
             if new_pull_server_side_config is None:
                 self.pull_server_side_config = True
