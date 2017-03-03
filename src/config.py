@@ -780,9 +780,9 @@ class Config(object):
                                   "parameter is not specified", name, PATH_PARAM)
                     continue
 
-                destination = self._try_load_param(section, DESTINATION_PARAM)
-                formatter = self._try_load_param(section, FORMATTER_PARAM)
-                entry_identifier = self._try_load_param(section, ENTRY_IDENTIFIER_PARAM)
+                destination = self._try_load_param_json(section, DESTINATION_PARAM)
+                formatter = self._try_load_param_json(section, FORMATTER_PARAM)
+                entry_identifier = self._try_load_param_json(section, ENTRY_IDENTIFIER_PARAM)
 
                 configured_log = ConfiguredLog(name, token,
                                                destination, path, formatter, entry_identifier)
@@ -815,20 +815,28 @@ class Config(object):
                                   "parameter is not specified", name, PATH_PARAM)
                     continue
 
-                destination = self._try_load_param(conf, name, DESTINATION_PARAM)
-                formatter = self._try_load_param(conf, name, FORMATTER_PARAM)
-                entry_identifier = self._try_load_param(conf, name, ENTRY_IDENTIFIER_PARAM)
+                destination = self._try_load_param_ini(conf, name, DESTINATION_PARAM)
+                formatter = self._try_load_param_ini(conf, name, FORMATTER_PARAM)
+                entry_identifier = self._try_load_param_ini(conf, name, ENTRY_IDENTIFIER_PARAM)
 
                 configured_log = ConfiguredLog(name, token,
                                                destination, path, formatter, entry_identifier)
                 self.configured_logs.append(configured_log)
 
-    def _try_load_param(self, conf, key):
+    def _try_load_param_json(self, conf, key):
         """Try to load a given parameter"""
         try:
             if key in conf:
                 param = conf.get(key)
                 return param
+        except ValueError:
+            return ''
+
+    def _try_load_param_ini(self, conf, name, key):
+        """Try to load a given parameter"""
+        try:
+            param = conf.get(name, key)
+            return param
         except ConfigParser.NoOptionError:
             return ''
 
