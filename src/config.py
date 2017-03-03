@@ -22,6 +22,7 @@ DEFAULT_USER_KEY = NOT_SET
 DEFAULT_AGENT_KEY = NOT_SET
 PID_FILE = '/var/run/logentries.pid'
 LE_CONFIG = 'config'  # Default configuration file
+JSON_CONFIG = 'config.json'
 CONFIG_DIR_SYSTEM = '/etc/le'
 CONFIG_DIR_USER = '.le'
 CONF_SUFFIX = '.conf'  # Expected suffix of configuration files
@@ -51,7 +52,6 @@ PROXY_PORT_PARAM = "proxy-port"
 KEY_LEN = 36
 LE_DEFAULT_SSL_PORT = 20000
 LE_DEFAULT_NON_SSL_PORT = 10000
-CONFIG_FILE = '/etc/le/config.json'
 CONFIG_PARAM = 'config'
 CONFIG_LOGS = 'logs'
 LOG_NAME = 'name'
@@ -69,7 +69,7 @@ class Config(object):
 
     def __init__(self):
         self.config_dir_name = self._get_config_dir()
-        self.config_filename = self.config_dir_name + LE_CONFIG
+        self.config_filename = self.config_dir_name + JSON_CONFIG
         self.config_d = os.path.join(self.config_dir_name, 'conf.d')
         self.include = NOT_SET
 
@@ -317,7 +317,7 @@ class Config(object):
             self._set_config_file_perms(config_files)
 
             # Read in json config file
-            d_conf = json.loads(open(CONFIG_FILE).read())
+            d_conf = json.loads(open(config_files[0]).read())
             d_configFile = d_conf[CONFIG_PARAM]
 
             # Get optional user-provided configuration directory
