@@ -335,7 +335,7 @@ class Config(object):
 
             self._load_parameters_json(d_configFile)
 
-            self._configure_proxy(d_configFile)
+            self._configure_proxy_json(d_configFile)
 
             new_suppress_ssl = d_configFile.get(SUPPRESS_SSL_PARAM)
             if new_suppress_ssl == 'True':
@@ -421,7 +421,7 @@ class Config(object):
 
             self._load_parameters_ini(conf)
 
-            self._configure_proxy(conf)
+            self._configure_proxy_ini(conf)
 
             new_suppress_ssl = conf.get(MAIN_SECT, SUPPRESS_SSL_PARAM)
             if new_suppress_ssl == 'True':
@@ -699,7 +699,7 @@ class Config(object):
             if new_pull_server_side_config is None:
                 self.pull_server_side_config = True
 
-    def _configure_proxy(self, conf):
+    def _configure_proxy_json(self, conf):
         """Load proxy configuration settings from config file provided"""
         if self.proxy_type is NOT_SET:
             self.proxy_type = conf.get(PROXY_TYPE_PARAM)
@@ -711,6 +711,25 @@ class Config(object):
                 self.proxy_url = NOT_SET
         if self.proxy_port is NOT_SET:
             proxy_port = conf.get(PROXY_PORT_PARAM)
+            if not proxy_port:
+                self.proxy_port = NOT_SET
+            else:
+                self.proxy_port = int(proxy_port)
+
+        self.use_proxy = self.proxy_type and self.proxy_url and self.proxy_port
+
+    def _configure_proxy_ini(self, conf):
+        """Load proxy configuration settings from config file provided"""
+        if self.proxy_type is NOT_SET:
+            self.proxy_type = conf.get(MAIN_SECT, PROXY_TYPE_PARAM)
+            if not self.proxy_type:
+                self.proxy_type = NOT_SET
+        if self.proxy_url is NOT_SET:
+            self.proxy_url = conf.get(MAIN_SECT, PROXY_URL_PARAM)
+            if not self.proxy_url:
+                self.proxy_url = NOT_SET
+        if self.proxy_port is NOT_SET:
+            proxy_port = conf.get(MAIN_SECT, PROXY_PORT_PARAM)
             if not proxy_port:
                 self.proxy_port = NOT_SET
             else:
