@@ -1,5 +1,3 @@
-"""Logentries Agent <https://logentries.com/>."""
-
 #!/usr/bin/env python
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
@@ -571,7 +569,7 @@ class Transport(object):
             try:
                 self._entries.put_nowait(entry)
                 break
-            except Queue.Full: #pylint: disable=no-member
+            except Queue.QueueFull: #pylint: disable=no-member
                 try:
                     self._entries.get_nowait()
                 except queue.Empty:
@@ -584,14 +582,14 @@ class Transport(object):
         self._worker.join(TRANSPORT_JOIN_INTERVAL)
 
     def run(self):
-        """When run with backgroud thread it collects entries from internal
+        """When run with background thread it collects entries from internal
         queue and sends them to destination."""
         self._open_connection()
         while not self._shutdown:
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except queue.Empty: #pylint: disable=no-member
+                except Queue.QueueEmpty: #pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -1228,11 +1226,14 @@ def start_followers(default_transport, states):
     available_formatters = config_formatters()
 
     for log_ in logs:
+        transport = default_transport.get()
+
         multilog_filename = False
         log_filename = log_['log']['user_data']['le_agent_filename']
         log_name = log_['log']['name']
         log_id = log_['log']['id']
         log_token = extract_token(log_)
+        #TODO check for no log token
 
         if log_filename.startswith(PREFIX_MULTILOG_FILENAME):
             log_filename = log_filename.replace(PREFIX_MULTILOG_FILENAME, '', 1).lstrip()
@@ -1259,9 +1260,9 @@ def start_followers(default_transport, states):
         LOG.info("Following %s", log_filename)
 
 
-        if log_token or CONFIG.datahub:
+        if log_token is not None or CONFIG.datahub is not None:
             transport = default_transport.get()
-        elif log_id:
+        elif log_id is not None:
             endpoint = Domain.DATA
 
             use_ssl = not CONFIG.suppress_ssl

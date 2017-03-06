@@ -18,7 +18,6 @@ from configured_log import ConfiguredLog
 from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 import glob
 
-
 DEFAULT_USER_KEY = NOT_SET
 DEFAULT_AGENT_KEY = NOT_SET
 PID_FILE = '/var/run/logentries.pid'
