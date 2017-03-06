@@ -472,7 +472,6 @@ class Config(object):
         """
         try:
             conf = ConfigParser.SafeConfigParser()
-
             utils.create_conf_dir(self)
             conf_file = open(self.config_filename, 'wb')
             conf.add_section(MAIN_SECT)
@@ -645,11 +644,6 @@ class Config(object):
             c_dir = os.path.expanduser('~') + '/' + CONFIG_DIR_USER
 
         return c_dir + '/'
-
-    # def _get_config_name()
-    # create method to identify which config file format is used (ini/json)
-    # <to be completed>
-
 
     @staticmethod
     def _list_configs(path):
