@@ -1443,7 +1443,7 @@ def cmd_monitor(args):
     """
     utils.no_more_args(args)
     # execute if statement here to use appropriate load method (for ini or config file)
-    CONFIG.load_json()
+    CONFIG.filename()
 
     # We need account and host ID to get server side configuration
     if CONFIG.pull_server_side_config:

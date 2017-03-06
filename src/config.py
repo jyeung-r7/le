@@ -16,6 +16,7 @@ import json
 from log import log
 from configured_log import ConfiguredLog
 from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+import glob
 
 
 DEFAULT_USER_KEY = NOT_SET
@@ -296,6 +297,7 @@ class Config(object):
                 return False
         return True
 
+
     def load_json(self, load_include_dirs=True):
         """
         Initializes configuration parameters from the configuration
@@ -364,6 +366,7 @@ class Config(object):
 
         return True
 
+
     def load_ini(self, load_include_dirs=True):
         """
         Initializes configuration parameters from the configuration
@@ -398,7 +401,7 @@ class Config(object):
             })
 
             # Read configuration files from default directories
-            config_files = [self.config_filename]
+            config_files = [self.config_dir_name + LE_CONFIG]
             if load_include_dirs:
                 config_files.extend(self._list_configs(self.config_d))
 
@@ -450,6 +453,16 @@ class Config(object):
                 ConfigParser.NoOptionError,
                 ConfigParser.MissingSectionHeaderError) as error:
             raise FatalConfigurationError('%s' % error)
+        return True
+
+    # method to determine type of config file in directory /etc/le and return the appropriate load method
+    def filename(self, load_include_dirs=True):
+        filename = glob.glob(self.config_dir_name + "*")
+        if filename[0] == (self.config_filename):
+            self.load_json()
+        else:
+            self.load_ini()
+
         return True
 
 
