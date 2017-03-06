@@ -355,7 +355,7 @@ class Config(object):
                 if state_file_str:
                     self.state_file = state_file_str
 
-            self.metrics.load(d_configFile)
+            self.metrics.load_json(d_configFile)
 
             self._load_configured_logs_json(d_configFile)
 
@@ -390,7 +390,7 @@ class Config(object):
                 SYSSTAT_TOKEN_PARAM: '',
                 STATE_FILE_PARAM: '',
                 HOSTNAME_PARAM: '',
-                PULL_SERVER_SIDE_CONFIG_PARAM: 'True',
+                PULL_SERVER_SIDE_CONFIG_PARAM: 'False',
                 INCLUDE_PARAM: '',
                 PROXY_TYPE_PARAM: '',
                 PROXY_URL_PARAM: '',
@@ -442,7 +442,7 @@ class Config(object):
                 if state_file_str:
                     self.state_file = state_file_str
 
-            self.metrics.load(conf)
+            self.metrics.load_ini(conf)
 
             self._load_configured_logs_ini(conf)
 

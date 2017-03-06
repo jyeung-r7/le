@@ -633,7 +633,7 @@ class MetricsConfig(object):
             self.__dict__[item] = self.DEFAULTS[item]
         self.processes = []
 
-    def load(self, conf):
+    def load_json(self, conf):
         """Loads metrics configuration."""
         # Basic metrics
         metricDict = conf.get(METRIC)
@@ -655,6 +655,30 @@ class MetricsConfig(object):
             self.processes.append([item, pattern, token])
         except ValueError:
             pass
+
+    def load_ini(self, conf):
+        """Loads metrics configuration."""
+        # Basic metrics
+        for item in self.DEFAULTS:
+            try:
+                self.__dict__[item] = conf.get(SECT, PREFIX + item)
+            except ConfigParser.NoOptionError:
+                pass
+        # Process metrics
+        for section in conf.sections():
+            if section != SECT:
+                try:
+                    try:
+                        token = conf.get(section, PREFIX + TOKEN)
+                    except ConfigParser.NoOptionError:
+                        try:
+                            token = conf.get(section, TOKEN)
+                        except ConfigParser.NoOptionError:
+                            token = ''
+                    pattern = conf.get(section, PREFIX + PROCESS)
+                    self.processes.append([section, pattern, token])
+                except ConfigParser.NoOptionError:
+                    pass
 
     def save(self, conf):
         """Saves all metrics conficuration."""
