@@ -1443,7 +1443,7 @@ def cmd_monitor(args):
     infrastructure.
     """
     utils.no_more_args(args)
-    CONFIG.filename()
+    CONFIG.load()
 
     # We need account and host ID to get server side configuration
     if CONFIG.pull_server_side_config:

@@ -455,7 +455,7 @@ class Config(object):
         return True
 
     # method to determine type of config file in directory /etc/le and return the appropriate load method
-    def filename(self, load_include_dirs=True):
+    def load(self, load_include_dirs=True):
         filename = glob.glob(self.config_dir_name + "*")
         if filename[0] == (self.config_filename):
             self.load_json()
