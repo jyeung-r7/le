@@ -22,9 +22,10 @@ import http.client
 
 
 from domain import Domain
-import __init__
-from constants import * #pylint: disable=unused-wildcard-import,wildcard-import
+from __init__ import __version__
 from le_backports import match_hostname, CertificateError
+from constants import * #pylint: disable=unused-wildcard-import,wildcard-import
+
 
 try:
     import uuid
