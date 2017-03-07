@@ -313,13 +313,11 @@ class Config(object):
             config_files = [self.config_filename]
             if load_include_dirs:
                 config_files.extend(self._list_configs(self.config_d))
-
             self._set_config_file_perms(config_files)
 
             # Read in json config file
             with open(config_files[0]) as data_file:
                 d_conf = json.loads(data_file.read())
-
             d_configFile = d_conf[CONFIG_PARAM]
 
             # Get optional user-provided configuration directory
@@ -331,12 +329,10 @@ class Config(object):
                     config_files.extend(json.loads(config_data).read())
 
             log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
-
             self._load_parameters_json(d_configFile)
-
             self._configure_proxy_json(d_configFile)
-
             new_suppress_ssl = d_configFile.get(SUPPRESS_SSL_PARAM)
+
             if new_suppress_ssl == 'True':
                 self.suppress_ssl = new_suppress_ssl == 'True'
             new_force_domain = d_configFile.get(FORCE_DOMAIN_PARAM)
@@ -355,7 +351,6 @@ class Config(object):
                     self.state_file = state_file_str
 
             self.metrics.load_json(d_configFile)
-
             self._load_configured_logs_json(d_configFile)
 
         except ValueError:
@@ -417,14 +412,12 @@ class Config(object):
                 config_files.extend(conf.read(self._list_configs(self.include)))
 
             log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
-
             self._load_parameters_ini(conf)
-
             self._configure_proxy_ini(conf)
-
             new_suppress_ssl = conf.get(MAIN_SECT, SUPPRESS_SSL_PARAM)
             if new_suppress_ssl == 'True':
                 self.suppress_ssl = new_suppress_ssl == 'True'
+
             new_force_domain = conf.get(MAIN_SECT, FORCE_DOMAIN_PARAM)
             if new_force_domain:
                 self.force_domain = new_force_domain
@@ -442,7 +435,6 @@ class Config(object):
                     self.state_file = state_file_str
 
             self.metrics.load_ini(conf)
-
             self._load_configured_logs_ini(conf)
 
         except (ConfigParser.NoSectionError,
