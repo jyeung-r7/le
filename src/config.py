@@ -309,7 +309,7 @@ class Config(object):
         """
 
         try:
-            PULL_SERVER_SIDE_CONFIG_PARAM = 'False'
+            PULL_SERVER_SIDE_CONFIG_PARAM = 'True'
             # Read configuration files from default directories
             config_files = [self.config_filename]
             if load_include_dirs:
@@ -392,7 +392,7 @@ class Config(object):
                 SYSSTAT_TOKEN_PARAM: '',
                 STATE_FILE_PARAM: '',
                 HOSTNAME_PARAM: '',
-                PULL_SERVER_SIDE_CONFIG_PARAM: 'False',
+                PULL_SERVER_SIDE_CONFIG_PARAM: 'True',
                 INCLUDE_PARAM: '',
                 PROXY_TYPE_PARAM: '',
                 PROXY_URL_PARAM: '',
