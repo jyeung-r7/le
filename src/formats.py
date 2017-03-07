@@ -22,7 +22,6 @@ class FormatPlain(object):
             formattedLine = self._token + line
         else:
             formattedLine = line
-
         return formattedLine
 
 

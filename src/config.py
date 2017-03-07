@@ -21,8 +21,8 @@ import glob
 DEFAULT_USER_KEY = NOT_SET
 DEFAULT_AGENT_KEY = NOT_SET
 PID_FILE = '/var/run/logentries.pid'
-LE_CONFIG = 'config'  # Default configuration file
-JSON_CONFIG = 'config.json'
+LE_CONFIG = 'config'
+JSON_CONFIG = 'config.json' # Default configuration file
 CONFIG_DIR_SYSTEM = '/etc/le'
 CONFIG_DIR_USER = '.le'
 CONF_SUFFIX = '.conf'  # Expected suffix of configuration files
@@ -296,7 +296,6 @@ class Config(object):
                 return False
         return True
 
-
     def load_json(self, load_include_dirs=True):
         """
         Initializes configuration parameters from the configuration
@@ -331,7 +330,6 @@ class Config(object):
                 with open(self._list_configs(self.include)) as config_data:
                     config_files.extend(json.loads(config_data).read())
 
-
             log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
 
             self._load_parameters_json(d_configFile)
@@ -364,7 +362,6 @@ class Config(object):
             print('JSON load error')
 
         return True
-
 
     def load_ini(self, load_include_dirs=True):
         """
@@ -454,7 +451,7 @@ class Config(object):
             raise FatalConfigurationError('%s' % error)
         return True
 
-    # method to determine type of config file in directory /etc/le and return the appropriate load method
+    # method to determine type of config file in root directory /etc/le or local directory ~/.le and return the appropriate load method
     def load(self, load_include_dirs=True):
         filename = glob.glob(self.config_dir_name + "*")
         if filename[0] == (self.config_filename):
