@@ -28,10 +28,8 @@ import threading
 import time
 import traceback
 import requests
-
 import queue
 from queue import Queue
-
 import http.client
 # Do not remove - fix for Python #8484
 try:
@@ -62,6 +60,7 @@ LOG = log_object.log
 
 
 def _set_log(log):
+    """Set the logger"""
     if log is not None:
         global LOG
         LOG = log
@@ -1052,6 +1051,10 @@ def check_file_name(file_name):
     2) the path starts with '/' character which indicates that the log has
     a "physical" path which starts from filesystem root.
     """
+    if not file_name:
+        return False
+
+    # Windows path does not start with '/'
     if os.name == 'nt':
         return True
     else:
@@ -1454,6 +1457,7 @@ class TerminationNotifier(object):
 
 
 def cmd_monitor_no_server_config(log):
+    """Monitor host activity and sends events collected to logentries infastructure from a local configuration"""
     CONFIG.pull_server_side_config = False
     _set_log(log)
     cmd_monitor('')
