@@ -22,7 +22,7 @@ DEFAULT_USER_KEY = NOT_SET
 DEFAULT_AGENT_KEY = NOT_SET
 PID_FILE = '/var/run/logentries.pid'
 LE_CONFIG = 'config'
-JSON_CONFIG = 'config.json' # Default configuration file
+JSON_CONFIG = 'logging.json' # Default configuration file
 CONFIG_DIR_SYSTEM = '/etc/le'
 CONFIG_DIR_USER = '.le'
 CONF_SUFFIX = '.conf'  # Expected suffix of configuration files
@@ -55,6 +55,7 @@ LE_DEFAULT_NON_SSL_PORT = 10000
 CONFIG_PARAM = 'config'
 CONFIG_LOGS = 'logs'
 LOG_NAME = 'name'
+EMPTY = 0
 
 
 class FatalConfigurationError(Exception):
@@ -445,8 +446,8 @@ class Config(object):
 
     # method to determine type of config file in root directory /etc/le or local directory ~/.le and return the appropriate load method
     def load(self, load_include_dirs=True):
-        filename = glob.glob(self.config_dir_name + '*')
-        if filename[0] == (self.config_filename):
+        filename = glob.glob(self.config_filename)
+        if len(filename) > EMPTY:
             self.load_json()
         else:
             self.load_ini()
