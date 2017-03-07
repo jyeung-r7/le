@@ -569,7 +569,7 @@ class Transport(object):
             try:
                 self._entries.put_nowait(entry)
                 break
-            except Queue.QueueFull: #pylint: disable=no-member
+            except queue.Full: #pylint: disable=no-member
                 try:
                     self._entries.get_nowait()
                 except queue.Empty:
@@ -589,7 +589,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except Queue.QueueEmpty: #pylint: disable=no-member
+                except queue.Empty: #pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
