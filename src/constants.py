@@ -187,11 +187,10 @@ YEAR = 365 * DAY
 
 LOG_LE_AGENT = 'logentries.com'
 
-
-LE_CERT_NAME = 'ca-certs.pem'
+LE_CERT_NAME = 'le-certs.pem'
+BUNDLE_CERT_NAME = 'cacert.pem'
 
 TCP_TIMEOUT = 10  # TCP timeout for the socket in seconds
-
 
 LOGSET_URL = "https://rest.logentries.com/management/logsets/"
 LOG_URL = "https://rest.logentries.com/management/logs/"

@@ -463,7 +463,7 @@ AUTHORITY_CERTIFICATE = ""
 
 def get_bundled_certs():
     """Read contents of cacert.pem"""
-    file_name = os.path.join(os.path.dirname(__file__), "cacert.pem")
+    file_name = os.path.join(os.path.dirname(__file__), BUNDLE_CERT_NAME)
     with open(file_name) as contents:
         return contents.read()
 
