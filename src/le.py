@@ -2,10 +2,10 @@
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
 
-#pylint: disable=wrong-import-order, wrong-import-position
+# pylint: disable=wrong-import-order, wrong-import-position
 from future.standard_library import install_aliases
 install_aliases()
-from urllib.parse import urlencode, quote #pylint: disable=import-error
+from urllib.parse import urlencode, quote  # pylint: disable=import-error
 
 import json
 import atexit
@@ -31,7 +31,7 @@ from queue import Queue
 import http.client
 # Do not remove - fix for Python #8484
 try:
-    import hashlib #pylint: disable=unused-import
+    import hashlib  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -45,10 +45,10 @@ from log import log as log_object
 from domain import Domain
 from le_backports import CertificateError, match_hostname
 from datetime_utils import parse_timestamp_range
-from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+from constants import *  # pylint: disable=unused-wildcard-import, wildcard-import
 
 
-# Explicitely set umask to allow user rw + group read
+# Explicitly set umask to allow user rw + group read
 os.umask(stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
 
 
@@ -75,13 +75,12 @@ def _debug_formatters(msg, *args):
         sys.stderr.write(msg % args)
 
 
-
 NO_SSL = False
 FEAT_SSL = True
 try:
     import ssl
 
-    wrap_socket = ssl.wrap_socket #pylint: disable=invalid-name
+    wrap_socket = ssl.wrap_socket  # pylint: disable=invalid-name
     CERT_REQUIRED = ssl.CERT_REQUIRED
 except ImportError:
     NO_SSL = True
@@ -112,7 +111,7 @@ def filter_events(events):
     return events
 
 
-def default_filter_filenames(filename):#pylint: disable=unused-argument
+def default_filter_filenames(filename):  # pylint: disable=unused-argument
     """
     By default we allow to follow any files specified in the configuration.
     """
@@ -394,10 +393,10 @@ class Transport(object):
         self.use_ssl = use_ssl
         self.preamble = preamble
         self._entries = Queue(SEND_QUEUE_SIZE)
-        self._socket = None # Socket with optional TLS encyption
+        self._socket = None  # Socket with optional TLS encyption
         self._debug_transport_events = debug_transport_events
 
-        self._shutdown = False # Shutdown flag - terminates the networking thread
+        self._shutdown = False  # Shutdown flag - terminates the networking thread
 
         # proxy setup
         self._use_proxy = False
@@ -577,7 +576,7 @@ class Transport(object):
             try:
                 self._entries.put_nowait(entry)
                 break
-            except queue.Full: #pylint: disable=no-member
+            except queue.Full:  # pylint: disable=no-member
                 try:
                     self._entries.get_nowait()
                 except queue.Empty:
@@ -586,7 +585,7 @@ class Transport(object):
     def close(self):
         """Close transport object"""
         self._shutdown = True
-        self.send('') # Force the networking thread to check the shutdown flag
+        self.send('')  # Force the networking thread to check the shutdown flag
         self._worker.join(TRANSPORT_JOIN_INTERVAL)
 
     def run(self):
@@ -597,7 +596,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except Queue.QueueEmpty: #pylint: disable=no-member
+                except Queue.QueueEmpty:  # pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -954,7 +953,6 @@ def get_or_create_log(logset_id, log_name):
         new_log = create_log(logset_id, log_name, '', do_follow=False, source='token')
         new_log['log'].get('token', None)
 
-
     return log_['log'].get('token', None)
 
 
@@ -1169,7 +1167,7 @@ def config_formatters():
     if CONFIG.formatters != NOT_SET:
         sys.path.append(CONFIG.formatters)
         try:
-            import formatters #pylint: disable=import-error
+            import formatters  # pylint: disable=import-error
 
             available_formatters = getattr(formatters, 'formatters', {})
             _debug_formatters("Available formatters: %s", available_formatters.keys())
@@ -1263,14 +1261,12 @@ def start_followers(default_transport, states):
         if not entry_filter:
             continue
 
-
         entry_formatter = formats.get_formatter(CONFIG.formatter,
                                                 CONFIG.hostname, log_name, log_token)
         entry_formatter = get_formatters(entry_formatter, available_formatters,
                                          log_name, log_id, log_token)
 
         LOG.info("Following %s", log_filename)
-
 
         if log_token is not None or CONFIG.datahub is not None:
             transport = default_transport.get()
@@ -1334,7 +1330,6 @@ def _is_followed(filename):
                 for logset_info in ilog['logsets_info']:
                     if logset_info['id'] == CONFIG.agent_key:
                         host_logs.append(ilog)
-
 
     if host_logs is not None:
         for ilog in host_logs:
@@ -1415,7 +1410,7 @@ def _load_state(state_file):
             return state
         except (IOError, ValueError, KeyError):
             pass
-    return {} # Fallback
+    return {}  # Fallback
 
 
 def save_state(state_file, followers):
@@ -1619,7 +1614,7 @@ def _user_prompt(path):
         for filename in file_candidates:
             if file_count < MAX_FILES_FOLLOWED:
                 print ('\t{0}'.format(filename))
-                file_count = file_count+1
+                file_count += 1
     while True:
         print("\nUse new path to follow files [y] or quit [n]?")
         user_resp = input().lower()

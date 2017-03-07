@@ -52,16 +52,13 @@ class Follower(object):
         self._worker.start()
         self._state = None
 
-
     def get_state(self):
         """Get State"""
         return self._state
 
-
     def get_name(self):
         """Get name"""
         return self.name
-
 
     def _load_state(self, state):
         """Load state and set to default if not set"""
@@ -71,14 +68,12 @@ class Follower(object):
             # -1 here means we'll seek to the end of the first file
             self._update_state(None, -1)
 
-
     def _update_state(self, real_name, file_position):
         """Update state with name and position"""
         self._state = {
             'filename': real_name,
             'position': file_position,
         }
-
 
     def _file_candidate(self):
         """
@@ -97,7 +92,6 @@ class Follower(object):
             return candidate_times[0][1]
         except os.error:
             return None
-
 
     def _open_log(self, filename=None, position=0):
         """Keeps trying to re-open the log file. Returns when the file has been
@@ -145,7 +139,6 @@ class Follower(object):
             first_try = False
             time.sleep(REOPEN_TRY_INTERVAL)
 
-
     def _close_log(self):
         if self._file:
             try:
@@ -153,7 +146,6 @@ class Follower(object):
             except IOError:
                 pass
             self._file = None
-
 
     def _log_rename(self):
         """Detects file rename."""
@@ -175,7 +167,6 @@ class Follower(object):
         except os.error:
             pass
 
-
     def _read_log_lines(self):
         """ Reads a block of lines from the log. Checks maximal line size. """
         size_hint = MAX_BLOCK_SIZE - len(self._read_file_rest)
@@ -193,17 +184,14 @@ class Follower(object):
 
         return [line for line in buff_lines[:-1]]
 
-
     def _set_file_position(self, offset, start=FILE_BEGIN):
         """ Move the position of filepointers."""
         self._file.seek(offset, start)
-
 
     def _get_file_position(self):
         """ Returns the position filepointers."""
         pos = self._file.tell()
         return pos
-
 
     def _collect_lines(self, lines):
         """Accepts lines received and merges them to multiline events.
@@ -227,7 +215,6 @@ class Follower(object):
             new_entry.append(line)
         self._entry_rest = new_entry
         return new_lines
-
 
     def _get_lines(self):
         """Returns a block of newly detected line from the log. Returns None in
@@ -274,7 +261,6 @@ class Follower(object):
         self._update_state(self.real_name, self._get_file_position())
         return lines
 
-
     def _send_lines(self, lines):
         """ Sends lines. """
         for line in lines:
@@ -290,13 +276,11 @@ class Follower(object):
                 continue
             self.transport.send(line)
 
-
     def close(self):
         """Closes the follower by setting the shutdown flag and waiting for the
         worker thread to stop."""
         self._shutdown = True
         self._worker.join(FOLLOWER_JOIN_INTERVAL)
-
 
     def monitorlogs(self):
         """ Opens the log file and starts to collect new events. """
@@ -391,7 +375,7 @@ class MultilogFollower(object):
                 follower.close()
                 self._followers.remove(follower)
                 if self.config.debug_multilog:
-                    sys.stderr.write("Number of followers decreased to: %s" %len(self._followers))
+                    sys.stderr.write("Number of followers decreased to: %s" % len(self._followers))
 
     def close(self):
         """

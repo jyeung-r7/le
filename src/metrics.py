@@ -50,8 +50,10 @@ def _psutil_cpu_count():
     except AttributeError:
         return psutil.cpu_count()
 
+
 class CpuMetrics(object):
     """CPU Metrics"""
+
     def __init__(self, per_core, interval, transport, formatter):
         self._per_core = per_core
         self._interval = interval
@@ -121,6 +123,7 @@ class CpuMetrics(object):
 
 class VcpuMetrics(object):
     """VCPU Metrics"""
+
     def __init__(self, interval, transport, formatter):
         self._interval = interval
         self._transport = transport
@@ -146,6 +149,7 @@ class VcpuMetrics(object):
 
 class MemMetrics(object):
     """Memory Metrics"""
+
     def __init__(self, interval, transport, formatter):
         self._interval = interval
         self._transport = transport
@@ -170,6 +174,7 @@ class MemMetrics(object):
 
 class SwapMetrics(object):
     """Swap Metrics"""
+
     def __init__(self, interval, transport, formatter):
         self._interval = interval
         self._transport = transport
@@ -204,6 +209,7 @@ class SwapMetrics(object):
 
 class DiskIoMetrics(object):
     """Disk IO Metrics"""
+
     def __init__(self, devices, interval, transport, formatter):
         self._parse_devices(devices)
         self._interval = interval
@@ -265,6 +271,7 @@ class DiskIoMetrics(object):
 
 class DiskSpaceMetrics(object):
     """Disk Space Metrics"""
+
     def __init__(self, paths, interval, transport, formatter):
         self._parse_paths(paths)
         self._interval = interval
@@ -296,6 +303,7 @@ class DiskSpaceMetrics(object):
 
 class NetMetrics(object):
     """Network Metrics"""
+
     def __init__(self, nets, interval, transport, formatter):
         self._parse_nets(nets)
         self._interval = interval
@@ -360,6 +368,7 @@ class NetMetrics(object):
 
 class ProcMetrics(object):
     """Process Metrics"""
+
     def __init__(self, name, pattern, token, interval, transport, formatter):
         self._name = name
         self._pattern = pattern
@@ -441,6 +450,7 @@ class ProcMetrics(object):
 
 class Metrics(object):
     """Metrics collecting class."""
+
     def __init__(self, conf, default_transport, formatter, debug):
         """Creates an instance of metrics from the configuration."""
         self._ready = False
@@ -462,8 +472,7 @@ class Metrics(object):
             report("Warning: Cannot instantiate metrics, invalid interval `%s'." % conf.interval)
 
         if PSUTIL_AVAILABLE:
-            self._items = self._instantiate_system(conf, debug) + \
-                          self._instantiate_processes(conf, debug)
+            self._items = self._instantiate_system(conf, debug) + self._instantiate_processes(conf, debug)
         else:
             if debug:
                 report("Warning: Cannot instantiate system metrics, "
@@ -556,7 +565,6 @@ class Metrics(object):
             self._timer.daemon = True
             self._timer.start()
 
-
     def _collect_metrics(self):
         """Collect metrics"""
         ethalon = time.time()
@@ -572,7 +580,6 @@ class Metrics(object):
                     report(''.join(traceback.format_tb(sys.exc_info()[2])))
 
         self._schedule(ethalon)
-
 
     def _collect_info(self):
         """Collect agent information"""
@@ -597,6 +604,7 @@ class Metrics(object):
 
 class StderrTransport(object):
     """Default transport encapsulation with additional logging to stderr."""
+
     def __init__(self, transport=None):
         self._transport = transport
 
@@ -627,7 +635,7 @@ class MetricsConfig(object):
 
     def __init__(self):
         # Set instance fields initialized to default values
-        self.token = '' # Avoid pylint error
+        self.token = ''  # Avoid pylint error
         for item in self.DEFAULTS:
             self.__dict__[item] = self.DEFAULTS[item]
         self.processes = []
@@ -671,6 +679,7 @@ class MetricsConfig(object):
             if process[2]:
                 conf.set(process[0], PREFIX + TOKEN, process[2])
 
+
 # Pattern matching safe values, values that does not need to be quited
 SAFE_CHARS = re.compile(r'^[a-zA-Z0-9_]*$')
 
@@ -682,6 +691,7 @@ def quote(text):
         return text
     else:
         return '"%s"' % text
+
 
 if __name__ == '__main__':
     metrics = None

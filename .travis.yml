@@ -1,0 +1,8 @@
+language: python
+python:
+  - "2.7"
+cache: pip
+install:
+  - pip install flake8
+script:
+  - flake8 --ignore E265,E402,E501,E713,F401,F403,F405 --exclude src/socks.py,src/le_backports.py src

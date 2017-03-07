@@ -58,7 +58,6 @@ class FatalConfigurationError(Exception):
         super(FatalConfigurationError, self).__init__(msg)
 
 
-
 class Config(object):
     """Config class"""
 
@@ -153,7 +152,7 @@ class Config(object):
         # Force host for this domain
         self.force_domain = NOT_SET
 
-    def process_params(self, params): #pylint: disable=too-many-branches, too-many-statements
+    def process_params(self, params):  # pylint: disable=too-many-branches, too-many-statements
         """
         Parses command line parameters and updates config parameters accordingly
         """
@@ -434,7 +433,6 @@ class Config(object):
             except TypeError:
                 conf.write(conf_file)
 
-
         except IOError as error:
             utils.die("Error: IO error when writing to config file: %s" % error)
 
@@ -503,13 +501,13 @@ class Config(object):
             # Validate that a pathname is detected in parameters to agent
             if len(pname_slice) == 0:
                 utils.die("\nError: No pathname detected - "
-                          "Specify the path to the file to be followed\n"
-                          + MULTILOG_USAGE, EXIT_OK)
+                          "Specify the path to the file to be followed\n" +
+                          MULTILOG_USAGE, EXIT_OK)
             # Validate that agent is not receiving a list of pathnames
             # (possibly shell is expanding wildcard)
             elif len(pname_slice) > 1:
-                utils.die("\nError: Too many arguments being passed to agent\n"
-                          + MULTILOG_USAGE, EXIT_OK)
+                utils.die("\nError: Too many arguments being passed to agent\n" +
+                          MULTILOG_USAGE, EXIT_OK)
             pname = str(pname_slice[0])
         elif not cmd_line and path is None:
             # For anything not coming in on command line no output is written to command line
@@ -541,8 +539,8 @@ class Config(object):
                     log.log.error("Error: Wildcard detected in filename of path argument")
                     return False
                 else:
-                    utils.die("\nError: No wildcard * allowed in filename\n"
-                              + MULTILOG_USAGE, EXIT_OK)
+                    utils.die("\nError: No wildcard * allowed in filename\n" +
+                              MULTILOG_USAGE, EXIT_OK)
         return True
 
     @staticmethod

@@ -65,7 +65,7 @@ class FormatCustom(object):
             'hostname': self._hostname,
             'appname': self._appname,
             'line': line
-            })
+        })
 
 
 def get_formatter(definition, hostname, log_name, log_token):

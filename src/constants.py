@@ -39,7 +39,7 @@ MAX_FILES_FOLLOWED = 100
 PREFIX_MULTILOG_FILENAME = "Multilog:"
 # Time interval to retry glob of multilog pathname to catch any
 # change in relevant directories that may have been deleted or added
-RETRY_GLOB_INTERVAL = 0.250 # in seconds
+RETRY_GLOB_INTERVAL = 0.250  # in seconds
 # Intervals for .join() on several threads
 FOLLOWMULTI_JOIN_INTERVAL = 1.0  # in seconds
 FOLLOWER_JOIN_INTERVAL = 1.0    # in seconds
@@ -73,14 +73,14 @@ TAIL_RECHECK = 0.2  # Seconds
 NAME_CHECK = 4  # TAIL_RECHECK cycles
 
 # Interval of inactivity when IAA token is sent
-IAA_INTERVAL = 10.0 # Seconds
+IAA_INTERVAL = 10.0  # Seconds
 # I am alive token that's passed at fixed interval during inactivity
 IAA_TOKEN = "###LE-IAA###"
 
 # Maximal size of a block of events
-MAX_BLOCK_SIZE = 65536 - 512 # Space for formatting
+MAX_BLOCK_SIZE = 65536 - 512  # Space for formatting
 
-# Interval between attampts to open a file
+# Interval between attempts to open a file
 REOPEN_INT = 1  # Seconds
 
 # Linux block devices
@@ -164,8 +164,7 @@ Where parameters are:
 """
 
 # Multilog option usage
-MULTILOG_USAGE = \
-"""
+MULTILOG_USAGE = """
 Usage:
   Agent is expecting a path name for a file, which should be between single quotes:
         example: \'/var/log/directoryname/file.log\'

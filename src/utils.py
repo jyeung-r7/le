@@ -8,7 +8,7 @@
 
 from future.standard_library import install_aliases
 install_aliases()
-from urllib.parse import urlencode #pylint: disable=import-error
+from urllib.parse import urlencode  # pylint: disable=import-error
 
 import errno
 import os
@@ -24,7 +24,7 @@ import http.client
 from domain import Domain
 from __init__ import __version__
 from le_backports import match_hostname, CertificateError
-from constants import * #pylint: disable=unused-wildcard-import,wildcard-import
+from constants import *  # pylint: disable=unused-wildcard-import,wildcard-import
 
 
 try:
@@ -32,7 +32,6 @@ try:
     FEAT_UUID = True
 except ImportError:
     FEAT_UUID = False
-
 
 
 __author__ = 'Logentries'
@@ -56,7 +55,6 @@ AUTHORITY_CERTIFICATE_FILES = [
     "/etc/ssl/cert.pem"]
 
 
-
 log = logging.getLogger(LOG_LE_AGENT)
 
 try:
@@ -77,15 +75,18 @@ except ImportError:
         """Wrap socket"""
         return socket.ssl(sock)
 
+
 def report(what):
     """Write text to stderr"""
     sys.stderr.write(what)
+
 
 class ServerHTTPSConnection(http.client.HTTPSConnection):
     """
     A slight modification of HTTPSConnection to verify the certificate
     """
-    def __init__(self, config, server, port, cert_file): #pylint: disable=super-init-not-called
+
+    def __init__(self, config, server, port, cert_file):  # pylint: disable=super-init-not-called
         self.no_ssl = config.suppress_ssl or not FEAT_SSL
         if self.no_ssl:
             self.config_connection(config, server, port, None, None)
@@ -97,7 +98,6 @@ class ServerHTTPSConnection(http.client.HTTPSConnection):
             else:
                 self.config_connection(config, server, port, None, cert_file)
 
-
     def config_connection(self, config, server, port, context, cert_file):
         """Create https connection with config provided"""
         if config.use_proxy:
@@ -108,7 +108,6 @@ class ServerHTTPSConnection(http.client.HTTPSConnection):
             http.client.HTTPSConnection.set_tunnel(self, server, port)
         else:
             http.client.HTTPSConnection.__init__(self, server, port, cert_file=cert_file)
-
 
     def connect(self):
         """Create http(s) connection"""
@@ -348,8 +347,8 @@ def log_match(expr, log_item):
     We perform the test on UUID, log name, and file name.
     """
     return uuid_match(expr, log_item['key']) or \
-           expr_match(expr, log_item['name']) or \
-           expr_match(expr, log_item['filename'])
+        expr_match(expr, log_item['name']) or \
+        expr_match(expr, log_item['filename'])
 
 
 def find_logs(expr, hosts):
@@ -459,6 +458,7 @@ def uuid_parse(text):
         pass
     return None
 
+
 AUTHORITY_CERTIFICATE = ""
 
 
@@ -559,6 +559,7 @@ def retrieve_account_key(config):
             raise KeyboardInterrupt()
 
         sys.stderr.write('Try to log in again, or press Ctrl+C to break')
+
 
 def safe_get(dct, *keys):
     """Gets a value from a dictionary if it exists."""

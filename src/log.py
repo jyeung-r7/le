@@ -7,6 +7,7 @@ import logging
 
 from utils import report, LOG_LE_AGENT, EXIT_ERR
 
+
 class Log(object):
     """Log object"""
     def __init__(self):
@@ -22,7 +23,6 @@ class Log(object):
         self.stream_handler.setFormatter(logging.Formatter("%(message)s"))
         self.log.addHandler(self.stream_handler)
 
-
     def enable_daemon_mode(self):
         """Enable daemon mode for log object"""
         self.log.removeHandler(self.stream_handler)
@@ -32,4 +32,4 @@ class Log(object):
         self.log.addHandler(shandler)
 
 
-log = Log()#pylint: disable=invalid-name
+log = Log()  # pylint: disable=invalid-name
