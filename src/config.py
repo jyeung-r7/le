@@ -445,7 +445,7 @@ class Config(object):
 
     # method to determine type of config file in root directory /etc/le or local directory ~/.le and return the appropriate load method
     def load(self, load_include_dirs=True):
-        filename = glob.glob(self.config_dir_name + "*")
+        filename = glob.glob(self.config_dir_name + '*')
         if filename[0] == (self.config_filename):
             self.load_json()
         else:
