@@ -461,9 +461,7 @@ class Config(object):
             self.load_json()
         else:
             self.load_ini()
-
         return True
-
 
     def save(self):  # pylint: disable=too-many-branches
         """
