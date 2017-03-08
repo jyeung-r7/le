@@ -819,12 +819,8 @@ class Config(object):
 
     def _try_load_param_json(self, conf, key):
         """Try to load a given parameter"""
-        try:
-            if key in conf:
-                param = conf.get(key)
-                return param
-        except ValueError:
-            return ''
+        param = conf.get(key,'')
+        return param
 
     def _try_load_param_ini(self, conf, name, key):
         """Try to load a given parameter"""
