@@ -18,10 +18,7 @@ class FormatPlain(object):
 
     def format_line(self, line):
         """Formats the given line"""
-        if self._token:
-            formattedLine = self._token + line
-        else:
-            formattedLine = line
+        formattedLine = (self._token + line) if self._token else line
         return formattedLine
 
 
