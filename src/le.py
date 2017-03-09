@@ -1182,7 +1182,7 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    return utils.safe_get(log_, 'log', 'tokens')
+    return utils.safe_get(log_, 'log', 'tokens')[0]
 
 
 def construct_configured_log(configured_log):
