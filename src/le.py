@@ -597,7 +597,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except Queue.QueueEmpty: #pylint: disable=no-member
+                except queue.Empty: #pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -1453,6 +1453,7 @@ class TerminationNotifier(object):
 def cmd_monitor_no_server_config(log):
     """Monitor host activity and sends events collected to logentries infastructure from a local configuration"""
     CONFIG.pull_server_side_config = False
+    CONFIG.debug = True
     _set_log(log)
     cmd_monitor('')
 
