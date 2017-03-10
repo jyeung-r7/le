@@ -180,7 +180,7 @@ class Follower(object):
         """ Reads a block of lines from the log. Checks maximal line size. """
         size_hint = MAX_BLOCK_SIZE - len(self._read_file_rest)
         buff = self._file.read(size_hint)
-        buff_lines = buff.split('\n')
+        buff_lines = buff.split(u'\n')
         if len(self._read_file_rest) > 0:
             buff_lines[0] = self._read_file_rest + buff_lines[0]
 
