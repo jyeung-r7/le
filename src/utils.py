@@ -167,7 +167,7 @@ def write_default_cert_file(config):
         with open(cert_filename, 'wb') as cert_file:
             cert_file.write(get_bundled_certs())
     except IOError as error:
-        report(error)
+        report(error.message)
 
 def default_cert_file(config):
     """
@@ -187,7 +187,7 @@ def default_cert_file(config):
             write_default_cert_file(config)
     except IOError as error:
         # Cannot read/write certificate file, ignore
-        report(error)
+        report(error.message)
     return cert_filename
 
 
