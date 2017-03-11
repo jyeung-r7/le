@@ -553,7 +553,7 @@ class Config(object):
         """
         if os.name == 'nt':
             if local:
-                c_dir = os.getcwd()
+                c_dir = CONFIG_DIR_SYSTEM
         else:
             if os.geteuid() == 0:
                 # Running as root

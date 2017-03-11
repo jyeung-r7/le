@@ -1450,12 +1450,70 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def cmd_monitor_no_server_config(log):
-    """Monitor host activity and sends events collected to logentries infastructure from a local configuration"""
+def cmd_monitor_no_server_config(log, config_dir):
+    """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
+    _set_log(log)
+    CONFIG.CONFIG_DIR_SYSTEM = config_dir
+    CONFIG.load()
+
     CONFIG.pull_server_side_config = False
     CONFIG.debug = True
-    _set_log(log)
-    cmd_monitor('')
+   
+    LOG.info('Initializing configured log from %s' % CONFIG.config_filename)
+    # Ensure all configured logs are created
+    if CONFIG.configured_logs and not CONFIG.datahub:
+        create_configured_logs(CONFIG.configured_logs)
+
+    # Start default transport channel
+    LOG.info('Initializing log transport')
+    default_transport = DefaultTransport(CONFIG)
+
+    formatter = formats.FormatSyslog(CONFIG.hostname, 'le', CONFIG.metrics.token)
+
+    LOG.info('Initializing metrics')
+    smetrics = metrics.Metrics(CONFIG.metrics, default_transport,
+                               formatter, CONFIG.debug_metrics)
+    smetrics.start()
+
+    followers = []
+    transports = []
+    follow_multilogs = []
+    terminate = TerminationNotifier()
+
+    LOG.info('Initializing log monitor')
+    try:
+        state = _load_state(CONFIG.state_file)
+
+        # Load logs to follow and start following them
+        if not CONFIG.debug_stats_only:
+            (followers, transports, follow_multilogs) = \
+                start_followers(default_transport, state)
+
+        # Periodically save state
+        while not terminate.terminate:
+            save_state(CONFIG.state_file, followers)
+
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+
+    LOG.info("Shutting down")
+    # Stop metrics
+    if smetrics:
+        smetrics.cancel()
+    # Close followers
+    for follower in followers:
+        follower.close()
+    # Close each follow_multilog and the followers it holds
+    for follow_multilog in follow_multilogs:
+        follow_multilog.close()
+    # Close transports
+    for transport in transports:
+        transport.close()
+    default_transport.close()
+    # Collect statuses
+    save_state(CONFIG.state_file, followers)
+    LOG.info("Shut down")
 
 
 def cmd_monitor(args):
