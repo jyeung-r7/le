@@ -562,8 +562,8 @@ def retrieve_account_key(config):
 
 
 def safe_path_ending(path):
-    if not path.endswith(os.pathsep):
-        path += os.pathsep
+    if not path.endswith(os.sep):
+        path += os.sep
     return path
 
 def safe_get(dct, *keys):
