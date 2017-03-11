@@ -80,7 +80,8 @@ except ImportError:
 def report(what):
     """Write text to stderr"""
     log.debug(what)
-    sys.stderr.write(what + '\n')
+    sys.stderr.write(what)
+    sys.stderr.write('\n')
 
 
 class ServerHTTPSConnection(http.client.HTTPSConnection):
