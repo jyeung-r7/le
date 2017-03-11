@@ -549,14 +549,14 @@ class Config(object):
         return True
 
     @staticmethod
-    def _get_config_dir(local=False):
+    def _get_config_dir():
         """
         Identifies a configuration directory.
         Always terminated with slash.
         """
         if os.name == 'nt':
-            if local:
-                c_dir = CONFIG_DIR_SYSTEM
+            # TODO: Define path for Windows
+            c_dir = os.getcwd()
         else:
             if os.geteuid() == 0:
                 # Running as root
