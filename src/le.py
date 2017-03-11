@@ -1016,7 +1016,10 @@ def cmd_register(args):
     """
     utils.no_more_args(args)
     CONFIG.load()
+    _perform_register()
 
+
+def _perform_register():
     if CONFIG.agent_key != NOT_SET and not CONFIG.force:
         utils.report("Warning: Server already registered. "
                      "Use --force to override current registration.\n")
@@ -1040,7 +1043,6 @@ def cmd_register(args):
     for log_ in logs:
         if CONFIG.std_all or log_['default'] == '1':
             request_follow(log_['filename'], log_['name'])
-
 
 def check_file_name(file_name):
     """
@@ -1450,7 +1452,7 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def cmd_monitor_no_server_config(config_dir, log, log_level=logging.INFO):
+def monitor_from_local_config(config_dir, log, log_level=logging.INFO):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
     _set_log(log)
 
@@ -1462,6 +1464,9 @@ def cmd_monitor_no_server_config(config_dir, log, log_level=logging.INFO):
 
     CONFIG.set_config_dir(config_dir)
     CONFIG.load()
+
+    LOG.info('Registering system')
+    _perform_register()
 
     LOG.info('Initializing configured log from %s' % CONFIG.config_filename)
     # Ensure all configured logs are created
