@@ -566,6 +566,7 @@ def safe_path_ending(path):
         path += os.sep
     return path
 
+
 def safe_get(dct, *keys):
     """Gets a value from a dictionary if it exists."""
     for key in keys:

@@ -1450,15 +1450,18 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def cmd_monitor_no_server_config(log, config_dir):
+def cmd_monitor_no_server_config(config_dir, log, log_level=logging.INFO):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
     _set_log(log)
 
+    CONFIG.pull_server_side_config = False
+
+    if log_level is logging.DEBUG:
+        LOG.setLevel(log_level)
+        CONFIG.debug = True
+
     CONFIG.set_config_dir(config_dir)
     CONFIG.load()
-
-    CONFIG.pull_server_side_config = False
-    CONFIG.debug = True
 
     LOG.info('Initializing configured log from %s' % CONFIG.config_filename)
     # Ensure all configured logs are created
@@ -1468,12 +1471,13 @@ def cmd_monitor_no_server_config(log, config_dir):
     # Start default transport channel
     LOG.info('Initializing log transport')
     default_transport = DefaultTransport(CONFIG)
-
+    LOG.debug('default_transport %s' % default_transport)
     formatter = formats.FormatSyslog(CONFIG.hostname, 'le', CONFIG.metrics.token)
 
     LOG.info('Initializing metrics')
     smetrics = metrics.Metrics(CONFIG.metrics, default_transport,
                                formatter, CONFIG.debug_metrics)
+    LOG.debug('metrics %s' % smetrics)
     smetrics.start()
 
     followers = []
