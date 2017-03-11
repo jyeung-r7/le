@@ -24,8 +24,6 @@ LE_CONFIG = 'config'  # Default configuration file
 CONFIG_DIR_SYSTEM = '/etc/le'
 CONFIG_DIR_USER = '.le'
 CONF_SUFFIX = '.conf'  # Expected suffix of configuration files
-LOCAL_CONFIG_DIR_USER = '.le'
-LOCAL_CONFIG_DIR_SYSTEM = '/etc/le'
 MAIN_SECT = 'Main'
 USER_KEY_PARAM = 'user-key'
 AGENT_KEY_PARAM = 'agent-key'
@@ -486,6 +484,11 @@ class Config(object):
             self.name = self.hostname_required().split('.')[0]
         return self.name
 
+    def set_config_dir(self, config_dir):
+        self.config_dir_name = config_dir
+        self.config_filename = self.config_dir_name + LE_CONFIG
+        self.config_d = os.path.join(self.config_dir_name, 'conf.d')
+
     @staticmethod
     def validate_pathname(args=None, cmd_line=True, path=None):
         """
@@ -546,7 +549,7 @@ class Config(object):
         return True
 
     @staticmethod
-    def _get_config_dir(local=True):
+    def _get_config_dir(local=False):
         """
         Identifies a configuration directory.
         Always terminated with slash.

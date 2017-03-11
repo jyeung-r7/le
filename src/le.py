@@ -1453,12 +1453,13 @@ class TerminationNotifier(object):
 def cmd_monitor_no_server_config(log, config_dir):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
     _set_log(log)
-    CONFIG.CONFIG_DIR_SYSTEM = config_dir
+
+    CONFIG.set_config_dir(config_dir)
     CONFIG.load()
 
     CONFIG.pull_server_side_config = False
     CONFIG.debug = True
-   
+
     LOG.info('Initializing configured log from %s' % CONFIG.config_filename)
     # Ensure all configured logs are created
     if CONFIG.configured_logs and not CONFIG.datahub:
@@ -1927,6 +1928,7 @@ def main_root():
         'reinit': cmd_reinit,
         'register': cmd_register,
         'monitor': cmd_monitor,
+        'monitorlocalconfig': cmd_monitor_no_server_config(LOG, os.getcwd()),
         'monitordaemon': cmd_monitor_daemon,
         'follow': cmd_follow,
         'followed': cmd_followed,
