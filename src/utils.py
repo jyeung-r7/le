@@ -560,6 +560,12 @@ def retrieve_account_key(config):
 
         sys.stderr.write('Try to log in again, or press Ctrl+C to break')
 
+
+def safe_path_ending(path):
+    if not path.endswith(os.pathsep):
+        path += os.pathsep
+    return path
+
 def safe_get(dct, *keys):
     """Gets a value from a dictionary if it exists."""
     for key in keys:

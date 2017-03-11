@@ -485,7 +485,7 @@ class Config(object):
         return self.name
 
     def set_config_dir(self, config_dir):
-        self.config_dir_name = config_dir
+        self.config_dir_name = utils.safe_path_ending(config_dir)
         self.config_filename = self.config_dir_name + LE_CONFIG
         self.config_d = os.path.join(self.config_dir_name, 'conf.d')
 
@@ -565,8 +565,7 @@ class Config(object):
                 # Running as an ordinary user
                 c_dir = os.path.expanduser('~') + '/' + CONFIG_DIR_USER
 
-        if not c_dir.endswith('/'):
-            c_dir += '/'
+        c_dir = utils.safe_path_ending(c_dir)
 
         return c_dir
 
