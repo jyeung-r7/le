@@ -483,9 +483,10 @@ class Transport(object):
             cause = error.strerror
             if not cause:
                 cause = "(No reason given)"
-            utils.report("Can't connect to %s/%s via SSL at port %s. "
-                         "Make sure that the host and port are reachable and speak SSL: %s"
-                         % (self.endpoint, address, self.port, cause))
+            message = "Can't connect to %s/%s via SSL at port %s. " \
+                      "Make sure that the host and port are reachable and speak SSL: %s" % \
+                      (self.endpoint, address, self.port, cause)
+            utils.report(message)
         return None
 
     def _connect_plain(self, plain_socket):
@@ -1457,6 +1458,7 @@ def monitor_from_local_config(config_dir, log, log_level=logging.INFO):
     _set_log(log)
 
     CONFIG.pull_server_side_config = False
+    CONFIG.use_ca_provided = True
 
     if log_level is logging.DEBUG:
         LOG.setLevel(log_level)
@@ -1464,9 +1466,6 @@ def monitor_from_local_config(config_dir, log, log_level=logging.INFO):
 
     CONFIG.set_config_dir(config_dir)
     CONFIG.load()
-
-    LOG.info('Registering system')
-    _perform_register()
 
     LOG.info('Initializing configured log from %s' % CONFIG.config_filename)
     # Ensure all configured logs are created
@@ -1937,7 +1936,7 @@ def main_root():
         'reinit': cmd_reinit,
         'register': cmd_register,
         'monitor': cmd_monitor,
-        'monitorlocalconfig': cmd_monitor_no_server_config(LOG, os.getcwd()),
+        'monitorlocalconfig': monitor_from_local_config(os.getcwd(), LOG, logging.DEBUG),
         'monitordaemon': cmd_monitor_daemon,
         'follow': cmd_follow,
         'followed': cmd_followed,

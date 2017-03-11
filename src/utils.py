@@ -56,7 +56,6 @@ AUTHORITY_CERTIFICATE_FILES = [
     "/etc/ssl/cert.pem"]
 
 
-
 log = logging.getLogger(LOG_LE_AGENT)
 
 try:
@@ -77,9 +76,12 @@ except ImportError:
         """Wrap socket"""
         return socket.ssl(sock)
 
+
 def report(what):
     """Write text to stderr"""
-    sys.stderr.write(what)
+    log.debug(what)
+    sys.stderr.write(what + '\n')
+
 
 class ServerHTTPSConnection(http.client.HTTPSConnection):
     """
@@ -160,13 +162,11 @@ def write_default_cert_file(config):
     """
     create_conf_dir(config)
     cert_filename = default_cert_file_name(config)
-    cert_file = open(cert_filename, 'wb')
-    if (os.name == 'nt'):
-        cert_file.write(get_bundled_certs().encode('cp1252'))
-    else:
-        cert_file.write(get_bundled_certs())
-    cert_file.close()
-
+    try:
+        with open(cert_filename, 'wb') as cert_file:
+            cert_file.write(get_bundled_certs())
+    except IOError as error:
+        report(error)
 
 def default_cert_file(config):
     """
@@ -177,16 +177,16 @@ def default_cert_file(config):
     try:
         # If the certificate file is not there, create it
         if not os.path.exists(cert_filename):
-            write_default_cert_file(config,)
+            write_default_cert_file(config)
             return cert_filename
 
         # If it is there, check if it is outdated
         curr_cert = rfile(cert_filename)
         if curr_cert != AUTHORITY_CERTIFICATE:
             write_default_cert_file(config)
-    except IOError:
+    except IOError as error:
         # Cannot read/write certificate file, ignore
-        pass
+        report(error)
     return cert_filename
 
 
@@ -465,7 +465,7 @@ AUTHORITY_CERTIFICATE = ""
 def get_bundled_certs():
     """Read contents of cacert.pem"""
     file_name = os.path.join(os.path.dirname(__file__), BUNDLE_CERT_NAME)
-    with open(file_name) as contents:
+    with open(file_name, 'rb') as contents:
         return contents.read()
 
 
