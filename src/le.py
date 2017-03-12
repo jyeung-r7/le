@@ -56,13 +56,6 @@ CONFIG = Config()
 LOG = log_object.log
 
 
-def _set_log(log):
-    """Set the logger"""
-    if log is not None:
-        global LOG
-        LOG = log
-
-
 def _debug_filters(msg, *args):
     """Print debug filters"""
     if CONFIG.debug_filters:
@@ -596,7 +589,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except Queue.QueueEmpty:  # pylint: disable=no-member
+                except queue.Empty:  # pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -1049,11 +1042,7 @@ def check_file_name(file_name):
     if not file_name:
         return False
 
-    # Windows path does not start with '/'
-    if os.name == 'nt':
-        return True
-    else:
-        return file_name.startswith('/')
+    return file_name.startswith('/')
 
 
 def get_filters(available_filters, filter_filenames, log_name, log_id, log_filename, log_token):
@@ -1443,13 +1432,6 @@ class TerminationNotifier(object):
     def signal_callback(self, signum, frame):
         """Sets terminate to true"""
         self.terminate = True
-
-
-def cmd_monitor_no_server_config(log):
-    """Monitor host activity and sends events collected to logentries infastructure from a local configuration"""
-    CONFIG.pull_server_side_config = False
-    _set_log(log)
-    cmd_monitor('')
 
 
 def cmd_monitor(args):

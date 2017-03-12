@@ -160,10 +160,7 @@ def write_default_cert_file(config):
     create_conf_dir(config)
     cert_filename = default_cert_file_name(config)
     cert_file = open(cert_filename, 'wb')
-    if (os.name == 'nt'):
-        cert_file.write(get_bundled_certs().encode('cp1252'))
-    else:
-        cert_file.write(get_bundled_certs())
+    cert_file.write(get_bundled_certs())
     cert_file.close()
 
 
@@ -465,7 +462,7 @@ AUTHORITY_CERTIFICATE = ""
 def get_bundled_certs():
     """Read contents of cacert.pem"""
     file_name = os.path.join(os.path.dirname(__file__), BUNDLE_CERT_NAME)
-    with open(file_name) as contents:
+    with open(file_name, 'rb') as contents:
         return contents.read()
 
 

@@ -544,21 +544,17 @@ class Config(object):
         return True
 
     @staticmethod
-    def _get_config_dir(local=True):
+    def _get_config_dir():
         """
-        Identifies a configuration directory.
+        Identifies a configuration directory for the current user.
         Always terminated with slash.
         """
-        if os.name == 'nt':
-            if local:
-                c_dir = os.getcwd()
+        if os.geteuid() == 0:
+            # Running as root
+            c_dir = CONFIG_DIR_SYSTEM
         else:
-            if os.geteuid() == 0:
-                # Running as root
-                c_dir = CONFIG_DIR_SYSTEM
-            else:
-                # Running as an ordinary user
-                c_dir = os.path.expanduser('~') + '/' + CONFIG_DIR_USER
+            # Running as an ordinary user
+            c_dir = os.path.expanduser('~') + '/' + CONFIG_DIR_USER
 
         if not c_dir.endswith('/'):
             c_dir += '/'
