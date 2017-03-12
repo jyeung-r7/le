@@ -163,11 +163,8 @@ def write_default_cert_file(config):
     """
     create_conf_dir(config)
     cert_filename = default_cert_file_name(config)
-    try:
-        with open(cert_filename, 'wb') as cert_file:
-            cert_file.write(get_bundled_certs())
-    except IOError as error:
-        report(error.message)
+    with open(cert_filename, 'wb') as cert_file:
+        cert_file.write(get_bundled_certs(config))
 
 def default_cert_file(config):
     """
@@ -175,19 +172,21 @@ def default_cert_file(config):
     certificate file if it is not there or it is outdated.
     """
     cert_filename = default_cert_file_name(config)
-    try:
-        # If the certificate file is not there, create it
-        if not os.path.exists(cert_filename):
-            write_default_cert_file(config)
-            return cert_filename
+    if not config.use_ca_provided:
+        # If it is not using ca provided, create it or copy from authority
+        try:
+            # If the certificate file is not there, create it
+            if not os.path.exists(cert_filename):
+                write_default_cert_file(config)
+                return cert_filename
 
-        # If it is there, check if it is outdated
-        curr_cert = rfile(cert_filename)
-        if curr_cert != AUTHORITY_CERTIFICATE:
-            write_default_cert_file(config)
-    except IOError as error:
-        # Cannot read/write certificate file, ignore
-        report(error.message)
+            # If it is there, check if it is outdated
+            curr_cert = rfile(cert_filename)
+            if curr_cert != AUTHORITY_CERTIFICATE:
+                write_default_cert_file(config)
+        except IOError:
+            # Cannot read/write certificate file, ignore
+            pass
     return cert_filename
 
 
@@ -463,9 +462,9 @@ def uuid_parse(text):
 AUTHORITY_CERTIFICATE = ""
 
 
-def get_bundled_certs():
+def get_bundled_certs(config):
     """Read contents of cacert.pem"""
-    file_name = os.path.join(os.path.dirname(__file__), BUNDLE_CERT_NAME)
+    file_name = os.path.join(config.config_dir_name, BUNDLE_CERT_NAME)
     with open(file_name, 'rb') as contents:
         return contents.read()
 
