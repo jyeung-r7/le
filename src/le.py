@@ -1791,8 +1791,8 @@ def cmd_ls_structures():
 
     for structure in sorted(structures, key=lambda x: x['name']):
         if CONFIG.uuid:
-            print utils.c_id(structure['id'])
-        print structure['name']
+            print (utils.c_id(structure['id']))
+        print (structure['name'])
 
     if len(structures) == 0:
         print >> sys.stderr, 'No structures defined'
@@ -1828,8 +1828,8 @@ def cmd_ls_patterns(structure_name):
     patterns = response['patterns']
     for pattern in sorted(patterns, cmp=utils.cmp_patterns):
         if CONFIG.uuid:
-            print utils.c_id(pattern['id']),
-        print '%2d %s' % (pattern['priority'], pattern['pattern'])
+            print (utils.c_id(pattern['id'])),
+        print ('%2d %s' % (pattern['priority'], pattern['pattern']))
     if len(patterns) == 0:
         print >> sys.stderr, 'No patterns in structure `%s\'' % structure_name
     elif len(patterns) == 1:
