@@ -1881,15 +1881,15 @@ def cmd_ls_structures():
 
     for structure in sorted(structures, key=lambda x: x['name']):
         if CONFIG.uuid:
-            print (utils.c_id(structure['id']))
-        print (structure['name'])
+            print(utils.c_id(structure['id']))
+        print(structure['name'])
 
     if len(structures) == 0:
-        print >> sys.stderr, 'No structures defined'
+        print('No structures defined', file=sys.stderr)
     elif len(structures) == 1:
-        print >> sys.stderr, '1 structure'
+        print('1 structure', file=sys.stderr)
     else:
-        print >> sys.stderr, '%s structures' % len(structures)
+        print('%s structures' % len(structures), file=sys.stderr)
 
 
 def cmd_ls_patterns(structure_name):
@@ -1921,11 +1921,11 @@ def cmd_ls_patterns(structure_name):
             print (utils.c_id(pattern['id'])),
         print ('%2d %s' % (pattern['priority'], pattern['pattern']))
     if len(patterns) == 0:
-        print >> sys.stderr, 'No patterns in structure `%s\'' % structure_name
+        print('No patterns in structure `%s\'' % structure_name, file=sys.stderr)
     elif len(patterns) == 1:
-        print >> sys.stderr, '1 pattern'
+        print('1 pattern', file=sys.stderr)
     else:
-        print >> sys.stderr, '%s patterns' % len(patterns)
+        print('%s patterns' % len(patterns), file=sys.stderr)
 
 
 def cmd_ls(args):
@@ -2011,12 +2011,12 @@ def cmd_add_structure(args):
             'description': '',
             'aux': {},
             }, True)
-        print >> sys.stderr, 'Added structure `%s\'' % structure_name
+        print('Added structure `%s\'' % structure_name, file=sys.stderr)
         structure_id = response['structure']['id']
     else:
         structure_id = matches[0]
         if not pattern:
-            print >> sys.stderr, 'Structure `%s\' already exists' % structure_name
+            print('Structure `%s\' already exists' % structure_name, file=sys.stderr)
 
     # Add pattern (if specified)
     # TODO - check that the pattern does not exist already
@@ -2025,7 +2025,7 @@ def cmd_add_structure(args):
             'priority': priority,
             'pattern': pattern,
             }, True)
-        print >> sys.stderr, 'Added pattern `%s\'' % pattern
+        print('Added pattern `%s\'' % pattern, file=sys.stderr)
 
 
 def cmd_add(args):
@@ -2061,7 +2061,7 @@ def cmd_rm_pattern(patterns, structure_name, structure_id):
             if rm_all or p['id'] == pattern or p['pattern'].startswith(pattern)]
     if not matches:
         if rm_all:
-            print >> sys.stderr, 'No pattern to be removed; structure is empty'
+            print('No pattern to be removed; structure is empty', file=sys.stderr)
         else:
             utils.error('No pattern matching `%s\' found', pattern)
     if len(matches) > 1 and not rm_all:
@@ -2070,7 +2070,7 @@ def cmd_rm_pattern(patterns, structure_name, structure_id):
     # Do the physical deletion
     for pattern_id, pattern_p in matches:
         response = api_v2_request('DELETE', 'structures/%s/patterns/%s'%(structure_id, pattern_id), {}, True)
-        print >> sys.stderr, 'Removed pattern `%s\'' % pattern_p
+        print('Removed pattern `%s\'' % pattern_p, file=sys.stderr)
 
 
 def cmd_rm_structure(args):
@@ -2117,8 +2117,8 @@ def cmd_rm_structure(args):
 
     if not patterns: # Removing structure
         response = api_v2_request('DELETE', 'structures/%s'%structure_id, {}, True)
-        print >> sys.stderr, 'Removed structure `%s\'' % structure_name
-    else: # Removing patterns
+        print('Removed structure `%s\'' % structure_name, file=sys.stderr)
+    else:  # Removing patterns
         cmd_rm_pattern(patterns, structure_name, structure_id)
 
 
