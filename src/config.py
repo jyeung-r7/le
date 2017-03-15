@@ -873,3 +873,6 @@ class Config(object):
                 utils.die("Cannot parse %s as port. "
                           "Specify a valid --datahub address" % values[1])
         self.datahub = value
+
+
+config_object = Config()#pylint: disable=invalid-name
