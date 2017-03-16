@@ -638,11 +638,11 @@ class MetricsConfig(object):
         """Loads metrics configuration."""
         # Basic metrics
         metricDict = conf.get(METRIC)
-        parameters = []
+        parameters = {}
         for item in self.DEFAULTS:
             try:
                 self.__dict__[item] = metricDict.get(PREFIX + item)
-                parameters.extend([item, self.__dict__[item]])
+                parameters[item] = self.__dict__[item]
             except ValueError:
                 pass
         # Process metrics

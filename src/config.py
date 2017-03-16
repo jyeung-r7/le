@@ -782,6 +782,8 @@ class Config(object):
                                                destination, path, formatter, entry_identifier)
                 self.configured_logs.append(configured_log)
 
+                return self.configured_logs
+
     def _load_configured_logs_ini(self, conf):
         """
         Loads configured logs from the configuration file.
