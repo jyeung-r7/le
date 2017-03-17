@@ -9,14 +9,13 @@ import socket
 import stat
 import getopt
 import configparser as ConfigParser
-
+import glob
 import metrics
 import utils
 import json
 from log import log
 from configured_log import ConfiguredLog
 from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
-import glob
 
 DEFAULT_USER_KEY = NOT_SET
 DEFAULT_AGENT_KEY = NOT_SET
@@ -62,7 +61,6 @@ class FatalConfigurationError(Exception):
     """Fatal Config Error"""
     def __init__(self, msg):
         super(FatalConfigurationError, self).__init__(msg)
-
 
 
 class Config(object):
@@ -309,7 +307,6 @@ class Config(object):
         """
 
         try:
-            PULL_SERVER_SIDE_CONFIG_PARAM = 'True'
             # Read configuration files from default directories
             config_files = [self.config_filename]
             if load_include_dirs:
