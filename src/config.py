@@ -12,7 +12,7 @@ import configparser as ConfigParser
 
 import metrics as metrics
 import utils as utils
-import log
+from log import log
 from configured_log import ConfiguredLog
 from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 
