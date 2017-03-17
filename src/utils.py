@@ -5,8 +5,10 @@
 
 #pylint: disable=invalid-name
 #pylint: disable=wrong-import-order, wrong-import-position
+from __future__ import absolute_import
 
 from future.standard_library import install_aliases
+
 install_aliases()
 from urllib.parse import urlencode #pylint: disable=import-error
 
@@ -20,12 +22,10 @@ import json
 import getpass
 import http.client
 
-
 from domain import Domain
 from __init__ import __version__
-from le_backports import match_hostname, CertificateError
 from constants import * #pylint: disable=unused-wildcard-import,wildcard-import
-
+from le_backports import match_hostname, CertificateError
 
 try:
     import uuid
@@ -96,9 +96,9 @@ except ImportError:
 
 def report(what):
     """Write text to stderr"""
-    log.debug(what)
+    log.error(what)
     sys.stderr.write(what)
-    sys.stderr.write('\n')
+    sys.stderr.write("\n")
 
 
 class ServerHTTPSConnection(http.client.HTTPSConnection):
@@ -533,7 +533,7 @@ def print_total(elems, name):
     elif total == 1:
         report("1 " + name)
     else:
-        report("%d %ss" % (total, name))
+        report("%d %ss \n" % (total, name))
 
 
 def retrieve_account_key(config):
