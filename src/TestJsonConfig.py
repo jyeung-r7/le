@@ -1,6 +1,8 @@
 import unittest
 import json
 import metrics
+import sys
+import logging
 from config import Config
 
 
@@ -130,43 +132,44 @@ class TestJsonConfig(unittest.TestCase):
 
     # test the _load_configured_logs_json() when incorrect token entered
     def test_load_configured_logs_json_token(self):
+        logger = logging.getLogger()
+        logger.level = logging.DEBUG
+        logger.addHandler(logging.StreamHandler(sys.stdout))
+
         CONFIG = Config()
-        expected_dict = {
-            'name': 'GreenLog',
-            'token': '09da4e87-882e-41f1-bf50-5f45273ed180',
-            'path': '/var/log/GreenLog',
-            'formatter' : '',
-            'entry_identifier' : '',
-            'destination' : ''
-          }
+        name = "GreenLog"
+        token = "09da4e87-882e-41f1-bf50-5f8888888888"
 
         # Read in json config file
         d_conf = json.loads(self.json_file_incorrect_token)
         d_configFile = d_conf['config']
 
-        incorrect_result = CONFIG._load_configured_logs_json(self.d_configFile)
+        CONFIG._load_configured_logs_json(self.d_configFile)
 
         # result matches error message
+        logging.getLogger().info("Invalid log token `%s' in application `%s'.",
+                        token, name)
 
     # test the _load_configured_logs_json() when path does not exist.
     def test_load_configured_logs_json_path(self):
+        logger = logging.getLogger()
+        logger.level = logging.DEBUG
+        logger.addHandler(logging.StreamHandler(sys.stdout))
+
         CONFIG = Config()
-        expected_dict = {
-            'name': 'GreenLog',
-            'token': '09da4e87-882e-41f1-bf50-5f45273ed180',
-            'path': '/var/log/GreenLog',
-            'formatter': '',
-            'entry_identifier': '',
-            'destination': ''
-        }
+        name = 'GreenLog'
+        path = None
+
 
         # Read in json config file
         d_conf = json.loads(self.json_file_no_path)
         d_configFile = d_conf['config']
 
-        incorrect_result = CONFIG._load_configured_logs_json(self.d_configFile)
+        CONFIG._load_configured_logs_json(self.d_configFile)
 
         # result matches error message
+        logging.getLogger().info("Not following logs for application `%s' as `%s' "
+         "parameter is not specified", name, path)
 
 if __name__ == '__main__':
     unittest.main()
