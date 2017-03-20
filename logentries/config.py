@@ -10,11 +10,11 @@ import stat
 import getopt
 import configparser as ConfigParser
 
-import metrics as metrics
-import utils as utils
-from log import log
-from configured_log import ConfiguredLog
-from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+import logentries.metrics as metrics
+import logentries.utils as utils
+from logentries.log import log
+from logentries.configured_log import ConfiguredLog
+from logentries.constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 
 
 DEFAULT_USER_KEY = NOT_SET

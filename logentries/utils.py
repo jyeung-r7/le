@@ -22,10 +22,10 @@ import json
 import getpass
 import http.client
 
-from domain import Domain
-from __init__ import __version__
-from constants import * #pylint: disable=unused-wildcard-import,wildcard-import
-from le_backports import match_hostname, CertificateError
+from logentries.__init__ import __version__
+from logentries.domain import Domain
+from logentries.constants import * #pylint: disable=unused-wildcard-import,wildcard-import
+from logentries.backports import match_hostname, CertificateError
 
 try:
     import uuid

@@ -41,17 +41,17 @@ try:
 except ImportError:
     pass
 
-import formats
-import socks
-import utils
-import metrics
-from config import Config, FatalConfigurationError
-from followers import Follower, MultilogFollower
-from log import log as log_object
-from domain import Domain
-from le_backports import CertificateError, match_hostname
-from datetime_utils import parse_timestamp_range
-from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+import logentries.formats
+import logentries.socks
+import logentries.utils
+import logentries.metrics
+from logentries.config import Config, FatalConfigurationError
+from logentries.followers import Follower, MultilogFollower
+from logentries.log import log as log_object
+from logentries.domain import Domain
+from logentries.backports import CertificateError, match_hostname
+from logentries.datetime_utils import parse_timestamp_range
+from logentries.constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 # Explicitely set umask to allow user rw + group read
 os.umask(stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
