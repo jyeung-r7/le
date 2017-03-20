@@ -308,25 +308,14 @@ class Config(object):
 
         try:
             # Read configuration files from default directories
-            config_files = [self.config_filename]
-            if load_include_dirs:
-                config_files.extend(self._list_configs(self.config_d))
-            self._set_config_file_perms(config_files)
+            config_file = self.config_filename
 
             # Read in json config file
-            with open(config_files[0]) as data_file:
+            with open(config_file) as data_file:
                 d_conf = json.loads(data_file.read())
             d_configFile = d_conf[CONFIG_PARAM]
 
-            # Get optional user-provided configuration directory
-            self.include = d_configFile.get(INCLUDE_PARAM)
-
-            # Load configuration files from user-provided directory
-            if load_include_dirs and self.include:
-                with open(self._list_configs(self.include)) as config_data:
-                    config_files.extend(json.loads(config_data).read())
-
-            log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
+            log.log.debug('Configuration file loaded: %s', ', ',config_file)
             self._load_parameters_json(d_configFile)
             self._configure_proxy_json(d_configFile)
             new_suppress_ssl = d_configFile.get(SUPPRESS_SSL_PARAM)
@@ -779,7 +768,7 @@ class Config(object):
                 formatter = self._try_load_param_json(section, FORMATTER_PARAM)
                 entry_identifier = self._try_load_param_json(section, ENTRY_IDENTIFIER_PARAM)
                 parameters_dict.update({DESTINATION_PARAM:destination, FORMATTER_PARAM:formatter,
-                                        ENTRY_IDENTIFIER_PARAM:entry_identifier} )
+                                        ENTRY_IDENTIFIER_PARAM:entry_identifier})
 
                 configured_log = ConfiguredLog(name, token,
                                                destination, path, formatter, entry_identifier)
