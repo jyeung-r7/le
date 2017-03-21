@@ -13,26 +13,28 @@ from logentries.utils import report, LOG_LE_AGENT, EXIT_ERR
 class Log(object):
     """Log object"""
     def __init__(self):
-        self.log = logging.getLogger(LOG_LE_AGENT)
+        self.logger = logging.getLogger(LOG_LE_AGENT)
         if not self.log:
             report("Cannot open log output")
             sys.exit(EXIT_ERR)
 
-        self.log.setLevel(logging.INFO)
+        self.logger.setLevel(logging.INFO)
 
         self.stream_handler = logging.StreamHandler()
         self.stream_handler.setLevel(logging.DEBUG)
         self.stream_handler.setFormatter(logging.Formatter("%(message)s"))
-        self.log.addHandler(self.stream_handler)
-
+        self.logger.addHandler(self.stream_handler)
 
     def enable_daemon_mode(self):
         """Enable daemon mode for log object"""
-        self.log.removeHandler(self.stream_handler)
-        shandler = logging.StreamHandler()
-        shandler.setLevel(logging.DEBUG)
-        shandler.setFormatter(logging.Formatter("%(asctime)s  %(message)s"))
-        self.log.addHandler(shandler)
+        self.logger.removeHandler(self.stream_handler)
+        self.stream_handler = logging.StreamHandler()
+        self.stream_handler.setLevel(logging.DEBUG)
+        self.stream_handler.setFormatter(logging.Formatter("%(asctime)s  %(message)s"))
+        self.logger.addHandler(self.stream_handler)
 
+    def set_logger(self, logger):
+        self.logger = logger
+        self.logger.addHandler(self.stream_handler)
 
-log = Log()#pylint: disable=invalid-name
+LOG = Log()
