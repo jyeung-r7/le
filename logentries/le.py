@@ -261,7 +261,7 @@ def collect_log_names(system_info):
             if name[-3:] != '.gz' and re.match(r'.*\.\d+$', name) is None:
                 logs.append(os.path.join(root, name))
 
-    LOG.debug("Collected logs: %s", logs)
+    LOG.logger.debug("Collected logs: %s", logs)
     try:
 
         conn = http.client.HTTPSConnection(LE_SERVER_API)
@@ -270,7 +270,7 @@ def collect_log_names(system_info):
             'distname': system_info['distname'],
             'distver': system_info['distver']
         }
-        LOG.debug("Requesting %s", request_)
+        LOG.logger.debug("Requesting %s", request_)
         conn.request('post', ID_LOGS_API, urlencode(request_), {})
         response = conn.getresponse()
         if not response or response.status != 200:
@@ -279,7 +279,7 @@ def collect_log_names(system_info):
         data = json.loads(response.read())
         log_data = data['logs']
 
-        LOG.debug("Identified logs: %s", log_data)
+        LOG.logger.debug("Identified logs: %s", log_data)
 
         return log_data
 
@@ -509,7 +509,7 @@ class Transport(object):
         preamble = self.preamble.strip()
         if preamble:
             preamble = ' ' + preamble
-        LOG.debug("Opening connection %s:%s%s",
+        LOG.logger.debug("Opening connection %s:%s%s",
                   self.endpoint, self.port, preamble)
         retry = 0
         delay = SRV_RECON_TO_MIN
@@ -665,7 +665,7 @@ def do_request(conn, operation, addr, data=None, headers=None):
     """Perform request"""
     if not headers:
         headers = {}
-        LOG.debug('Domain request: %s %s %s %s', operation, addr, data, headers)
+        LOG.logger.debug('Domain request: %s %s %s %s', operation, addr, data, headers)
     if data:
         conn.request(operation, addr, data, headers=headers)
     else:
@@ -689,7 +689,7 @@ def get_response(operation, addr, data=None, headers=None,
             LOG.logger.info("SSL error: %s", msg)
     except socket.error as msg:  # Network error
         if not silent:
-            LOG.debug("Network error: %s", msg)
+            LOG.logger.debug("Network error: %s", msg)
     except http.client.BadStatusLine:
         error = "Internal error, bad status line"
         if die_on_error:
@@ -722,7 +722,7 @@ def api_v2_request(method, url, request, required=False, silent=False, die_on_er
     xresponse = response.read()
     conn.close()
 
-    LOG.debug('Domain response: "%s"', xresponse)
+    LOG.logger.debug('Domain response: "%s"', xresponse)
     try:
         if xresponse:
             d_response = utils.json_loads(xresponse)
@@ -803,7 +803,7 @@ def request(request_, required=False, check_status=False, rtype='GET', retry=Fal
 
     response = response.read()
     conn.close()
-    LOG.debug('List response: %s', response)
+    LOG.logger.debug('List response: %s', response)
     try:
         d_response = json.loads(response)
     except ValueError:
@@ -1440,7 +1440,7 @@ def create_configured_logs(configured_logs):
     """
     for clog in configured_logs:
         if not clog.destination and not clog.token:
-            LOG.debug("Not following logs for application `%s' "
+            LOG.logger.debug("Not following logs for application `%s' "
                       "as neither `%s' nor `%s' parameter is specified",
                       clog.name, TOKEN_PARAM, DESTINATION_PARAM)
             continue
@@ -1506,18 +1506,22 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def monitor_from_local_config(config_dir, logger, log_level=logging.INFO):
+def monitor_from_local_config(args, config_dir=None, logger=None, log_level=logging.DEBUG):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
-    _set_logger(logger)
+    utils.no_more_args(args)
 
     CONFIG.pull_server_side_config = False
     CONFIG.use_ca_provided = True
+
+    if logger is not None:
+        _set_logger(logger)
 
     if log_level is logging.DEBUG:
         LOG.logger.setLevel(log_level)
         CONFIG.debug = True
 
-    CONFIG.set_config_dir(config_dir)
+    if config_dir is not None:
+        CONFIG.set_config_dir(config_dir)
     CONFIG.load()
 
     LOG.logger.info('Initializing configured log from %s' % CONFIG.config_filename)
@@ -1528,14 +1532,11 @@ def monitor_from_local_config(config_dir, logger, log_level=logging.INFO):
     # Start default transport channel
     LOG.logger.info('Initializing log transport')
     default_transport = DefaultTransport(CONFIG)
-    LOG.debug('default_transport %s' % default_transport)
     formatter = formats.FormatSyslog(CONFIG.hostname, 'le', CONFIG.metrics.token)
 
     LOG.logger.info('Initializing metrics')
-    smetrics = metrics.Metrics(CONFIG.metrics, default_transport,
-                               formatter, CONFIG.debug_metrics)
-    LOG.debug('metrics %s' % smetrics)
-    smetrics.start()
+    s_metrics = metrics.Metrics(CONFIG.metrics, default_transport, formatter, CONFIG.debug_metrics)
+    s_metrics.start()
 
     followers = []
     transports = []
@@ -1561,8 +1562,8 @@ def monitor_from_local_config(config_dir, logger, log_level=logging.INFO):
 
     LOG.logger.info("Shutting down")
     # Stop metrics
-    if smetrics:
-        smetrics.cancel()
+    if s_metrics:
+        s_metrics.cancel()
     # Close followers
     for follower in followers:
         follower.close()
@@ -2233,7 +2234,7 @@ def main_root():
         'reinit': cmd_reinit,
         'register': cmd_register,
         'monitor': cmd_monitor,
-        'monitorlocalconfig': monitor_from_local_config(os.getcwd(), LOG, logging.DEBUG),
+        'monitorlocalconfig': monitor_from_local_config,
         'monitordaemon': cmd_monitor_daemon,
         'follow': cmd_follow,
         'followed': cmd_followed,

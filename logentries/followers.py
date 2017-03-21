@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 
+from logentries.log import LOG
 from logentries.constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
     FILE_END, FILE_BEGIN, MAX_BLOCK_SIZE, TAIL_RECHECK, \
     LINE_SEPARATOR, NAME_CHECK, FOLLOWER_JOIN_INTERVAL, \
@@ -31,7 +32,6 @@ class Follower(object):
                  transport,
                  state,
                  config,
-                 logger,
                  disable_glob=False):
         """ Initializes the follower. """
         self.name = name
@@ -40,7 +40,6 @@ class Follower(object):
         self.entry_formatter = entry_formatter
         self.transport = transport
         self.config = config
-        self.logger = logger
         # FollowMultilog usage
         self._disable_glob = disable_glob
 
@@ -140,7 +139,7 @@ class Follower(object):
                     pass
 
             if error_info:
-                self.logger.info("Cannot open file '%s', re-trying in %ss intervals",
+                LOG.logger.info("Cannot open file '%s', re-trying in %ss intervals",
                              self.name, REOPEN_INT)
                 error_info = False
             first_try = False
@@ -312,15 +311,15 @@ class Follower(object):
                     self._send_lines(lines)
                 except IOError as error:
                     if self.config.debug:
-                        self.logger.debug("IOError: %s", error)
+                        LOG.logger.debug("IOError: %s", error)
                     self._open_log()
                 except UnicodeError:
-                    self.logger.warn("UnicodeError sending lines `%s'", lines, exc_info=True)
+                    LOG.logger.warn("UnicodeError sending lines `%s'", lines, exc_info=True)
                 except Exception as error:
-                    self.logger.error("Caught unknown error `%s' while sending lines %s",
+                    LOG.logger.error("Caught unknown error `%s' while sending lines %s",
                                   error, lines, exc_info=True)
             except Exception as error:
-                self.logger.error("Caught unknown error `%s' while sending line", error, exc_info=True)
+                LOG.logger.error("Caught unknown error `%s' while sending line", error, exc_info=True)
         if self._file:
             self._update_state(self.real_name, self._get_file_position())
         self._close_log()
@@ -340,7 +339,6 @@ class MultilogFollower(object):
                  transport,
                  states,
                  config,
-                 logger,
                  max_num_followers=MAX_FILES_FOLLOWED):
         """ Initializes the FollowMultilog. """
         self.name = name
@@ -349,7 +347,6 @@ class MultilogFollower(object):
         self.entry_formatter = entry_formatter
         self.transport = transport
         self.config = config
-        self.logger = logger
 
         self._states = states
         self._shutdown = False
@@ -386,7 +383,7 @@ class MultilogFollower(object):
                 if self.config.debug_multilog:
                     sys.stderr.write("Number of followers increased to: %s" % len(self._followers))
             else:
-                self.logger.debug("Warning: Allowed maximum of files that can be followed reached")
+                LOG.logger.debug("Warning: Allowed maximum of files that can be followed reached")
                 break
 
     def _remove_followers(self, removed_files):
@@ -417,19 +414,19 @@ class MultilogFollower(object):
             start_set = set([filename for filename in glob.glob(self.name)])
 
             if len(start_set) == 0:
-                self.logger.error("FollowMultilog: no files found in OS to be followed")
+                LOG.logger.error("FollowMultilog: no files found in OS to be followed")
             else:
                 self._append_followers(start_set, self._states)
 
         except os.error:
-            self.logger.error("Error: FollowerMultiple glob has failed")
+            LOG.logger.error("Error: FollowerMultiple glob has failed")
 
         while not self._shutdown:
             time.sleep(RETRY_GLOB_INTERVAL)
             try:
                 current_set = set([filename for filename in glob.glob(self.name)])
             except os.error:
-                self.logger.error("Error: FollowerMultiple glob has failed")
+                LOG.logger.error("Error: FollowerMultiple glob has failed")
             followed_files = [follower.name for follower in self._followers]
             added_files = [filename for filename in current_set if not filename in followed_files]
             self._append_followers(added_files)

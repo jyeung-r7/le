@@ -14,7 +14,7 @@ class Log(object):
     """Log object"""
     def __init__(self):
         self.logger = logging.getLogger(LOG_LE_AGENT)
-        if not self.log:
+        if not self.logger:
             report("Cannot open log output")
             sys.exit(EXIT_ERR)
 
