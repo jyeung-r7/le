@@ -41,30 +41,28 @@ try:
 except ImportError:
     pass
 
-import formats
-import socks
-import utils
-import metrics
-from config import Config, FatalConfigurationError
-from followers import Follower, MultilogFollower
-from log import log as log_object
-from domain import Domain
-from le_backports import CertificateError, match_hostname
-from datetime_utils import parse_timestamp_range
-from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+import logentries.formats as formats
+import logentries.socks as socks
+import logentries.utils as utils
+import logentries.metrics as metrics
+from logentries.log import LOG
+from logentries.config import Config, FatalConfigurationError
+from logentries.followers import Follower, MultilogFollower
+from logentries.domain import Domain
+from logentries.backports import CertificateError, match_hostname
+from logentries.datetime_utils import parse_timestamp_range
+from logentries.constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 # Explicitely set umask to allow user rw + group read
 os.umask(stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
 
 CONFIG = Config()
-LOG = log_object.log
 
 
-def _set_log(log):
+def _set_logger(logger):
     """Set the logger"""
-    if log is not None:
-        global LOG
-        LOG = log
+    if logger is not None:
+        LOG.set_logger(logger)
 
 
 def _debug_filters(msg, *args):
@@ -250,7 +248,7 @@ def daemonize():
         utils.die("%s" % err)
 
     # Logging for daemon mode
-    log_object.enable_daemon_mode()
+    LOG.enable_daemon_mode()
 
 
 def collect_log_names(system_info):
@@ -263,7 +261,7 @@ def collect_log_names(system_info):
             if name[-3:] != '.gz' and re.match(r'.*\.\d+$', name) is None:
                 logs.append(os.path.join(root, name))
 
-    LOG.debug("Collected logs: %s", logs)
+    LOG.logger.debug("Collected logs: %s", logs)
     try:
 
         conn = http.client.HTTPSConnection(LE_SERVER_API)
@@ -272,7 +270,7 @@ def collect_log_names(system_info):
             'distname': system_info['distname'],
             'distver': system_info['distver']
         }
-        LOG.debug("Requesting %s", request_)
+        LOG.logger.debug("Requesting %s", request_)
         conn.request('post', ID_LOGS_API, urlencode(request_), {})
         response = conn.getresponse()
         if not response or response.status != 200:
@@ -281,7 +279,7 @@ def collect_log_names(system_info):
         data = json.loads(response.read())
         log_data = data['logs']
 
-        LOG.debug("Identified logs: %s", log_data)
+        LOG.logger.debug("Identified logs: %s", log_data)
 
         return log_data
 
@@ -418,10 +416,10 @@ class Transport(object):
                 self._proxy_type = socks.PROXY_TYPE_SOCKS4
             else:
                 self._use_proxy = False
-                LOG.error("Invalid proxy type. Only HTTP, SOCKS5 and SOCKS4 are accepted")
+                LOG.logger.error("Invalid proxy type. Only HTTP, SOCKS5 and SOCKS4 are accepted")
 
         if self._use_proxy:
-            LOG.info("Using proxy with proxy_type: %s, proxy-url: %s, proxy-port: %s",
+            LOG.logger.info("Using proxy with proxy_type: %s, proxy-url: %s, proxy-port: %s",
                      proxy_type_str, self._proxy_url, self._proxy_port)
 
         # Get certificate name
@@ -511,7 +509,7 @@ class Transport(object):
         preamble = self.preamble.strip()
         if preamble:
             preamble = ' ' + preamble
-        LOG.debug("Opening connection %s:%s%s",
+        LOG.logger.debug("Opening connection %s:%s%s",
                   self.endpoint, self.port, preamble)
         retry = 0
         delay = SRV_RECON_TO_MIN
@@ -606,7 +604,7 @@ class Transport(object):
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
-                LOG.error("Exception in run: %s", traceback.format_exc())
+                LOG.logger.error("Exception in run: %s", traceback.format_exc())
         self._close_connection()
 
 
@@ -650,24 +648,24 @@ def _startup_info():
     Prints correct startup information based on OS
     """
     if 'darwin' in sys.platform:
-        LOG.info(
+        LOG.logger.info(
             '  sudo launchctl unload /Library/LaunchDaemons/com.logentries.agent.plist')
-        LOG.info(
+        LOG.logger.info(
             '  sudo launchctl load /Library/LaunchDaemons/com.logentries.agent.plist')
     elif 'linux' in sys.platform:
-        LOG.info('  sudo service logentries restart')
+        LOG.logger.info('  sudo service logentries restart')
     elif 'sunos' in sys.platform:
-        LOG.info('  sudo svcadm disable logentries')
-        LOG.info('  sudo svcadm enable logentries')
+        LOG.logger.info('  sudo svcadm disable logentries')
+        LOG.logger.info('  sudo svcadm enable logentries')
     else:
-        LOG.info('')
+        LOG.logger.info('')
 
 
 def do_request(conn, operation, addr, data=None, headers=None):
     """Perform request"""
     if not headers:
         headers = {}
-        LOG.debug('Domain request: %s %s %s %s', operation, addr, data, headers)
+        LOG.logger.debug('Domain request: %s %s %s %s', operation, addr, data, headers)
     if data:
         conn.request(operation, addr, data, headers=headers)
     else:
@@ -688,16 +686,16 @@ def get_response(operation, addr, data=None, headers=None,
         return response, conn
     except socket.sslerror as msg:  # Network error
         if not silent:
-            LOG.info("SSL error: %s", msg)
+            LOG.logger.info("SSL error: %s", msg)
     except socket.error as msg:  # Network error
         if not silent:
-            LOG.debug("Network error: %s", msg)
+            LOG.logger.debug("Network error: %s", msg)
     except http.client.BadStatusLine:
         error = "Internal error, bad status line"
         if die_on_error:
             utils.die(error)
         else:
-            LOG.info(error)
+            LOG.logger.info(error)
 
     return None, None
 
@@ -709,7 +707,7 @@ def api_v2_request(method, url, request, required=False, silent=False, die_on_er
     # Obtain response
     request_encoded = json.dumps(request)
     response, conn = get_response(
-        method, '/v2/accounts/%s/%s'%(config.user_key, url), request_encoded,
+        method, '/v2/accounts/%s/%s'%(CONFIG.user_key, url), request_encoded,
         silent=silent, die_on_error=die_on_error, domain=Domain.API,
         headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
@@ -724,7 +722,7 @@ def api_v2_request(method, url, request, required=False, silent=False, die_on_er
     xresponse = response.read()
     conn.close()
 
-    LOG.debug('Domain response: "%s"', xresponse)
+    LOG.logger.debug('Domain response: "%s"', xresponse)
     try:
         if xresponse:
             d_response = utils.json_loads(xresponse)
@@ -735,7 +733,7 @@ def api_v2_request(method, url, request, required=False, silent=False, die_on_er
         if die_on_error:
             utils.die(error)
         else:
-            LOG.info(error)
+            LOG.logger.info(error)
             d_response = None
 
     if response.status not in [http.client.OK, http.client.CREATED, http.client.NO_CONTENT]:
@@ -796,7 +794,7 @@ def request(request_, required=False, check_status=False, rtype='GET', retry=Fal
             utils.die('Error: Cannot process LE request, no response')
         if retry:
             if not noticed:
-                LOG.info('Error: No response from LE, re-trying in %ss intervals',
+                LOG.logger.info('Error: No response from LE, re-trying in %ss intervals',
                          SRV_RECON_TIMEOUT)
                 noticed = True
             time.sleep(SRV_RECON_TIMEOUT)
@@ -805,7 +803,7 @@ def request(request_, required=False, check_status=False, rtype='GET', retry=Fal
 
     response = response.read()
     conn.close()
-    LOG.debug('List response: %s', response)
+    LOG.logger.debug('List response: %s', response)
     try:
         d_response = json.loads(response)
     except ValueError:
@@ -846,7 +844,7 @@ def _get_log(log_id=None):
         if response.status_code is 200:
             return response.json()
         else:
-            LOG.error("Could not retrieve log - %d", response.status_code)
+            LOG.logger.error("Could not retrieve log - %d", response.status_code)
             return None
     except requests.exceptions.RequestException as error:
         utils.die(error)
@@ -885,10 +883,10 @@ def create_log(logset_id, name, filename, do_follow=True, source=None):
     try:
         response = requests.post(LOG_URL, json=params, headers=headers)
         if response.status_code is 201:
-            LOG.info("Created log with ID: %s", response.json()['log']['id'])
+            LOG.logger.info("Created log with ID: %s", response.json()['log']['id'])
             return response.json()
         else:
-            LOG.error("Error - %d. Could not create log.", response.status_code)
+            LOG.logger.error("Error - %d. Could not create log.", response.status_code)
     except requests.exceptions.RequestException as error:
         utils.die(error)
 
@@ -939,7 +937,7 @@ def request_follow(filename, name):
     CONFIG.agent_key_required()
     followed_log = create_log(CONFIG.agent_key, name, filename)
     print("Will follow %s as %s" % (filename, name))
-    LOG.info("Don't forget to restart the daemon")
+    LOG.logger.info("Don't forget to restart the daemon")
     _startup_info()
     return followed_log
 
@@ -957,7 +955,7 @@ def get_logset(logset_id=None):
         if response.status_code is 200:
             return response.json()
         else:
-            LOG.error("ERROR: %d - Could not retrieve logset %s for account ID %s.",
+            LOG.logger.error("ERROR: %d - Could not retrieve logset %s for account ID %s.",
                       response.status_code, logset_id, CONFIG.user_key)
             return None
     except requests.exceptions.RequestException as error:
@@ -999,7 +997,7 @@ def get_or_create_log(logset_id, log_name):
     logset = get_logset(logset_id)
 
     if logset is None:
-        LOG.error("Logset: %s does not exist", logset_id)
+        LOG.logger.error("Logset: %s does not exist", logset_id)
         return None
 
     log_ = _get_log_by_name(log_name)
@@ -1026,7 +1024,7 @@ def cmd_init(args):
     utils.no_more_args(args)
     CONFIG.user_key_required(True)
     CONFIG.save()
-    LOG.info("Initialized")
+    LOG.logger.info("Initialized")
 
 
 def cmd_whoami(args):
@@ -1039,18 +1037,18 @@ def cmd_whoami(args):
     logset = get_logset(CONFIG.agent_key)
     logs = _get_loglist_with_paths()
     if logset is not None:
-        LOG.info("name %s", utils.safe_get(logset, 'logset', 'name'))
-        LOG.info("hostname %s", CONFIG.hostname)
-        LOG.info("key %s", utils.safe_get(logset, 'logset', 'id'))
-        LOG.info("distribution %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distname'))
-        LOG.info("distver %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distver'))
+        LOG.logger.info("name %s", utils.safe_get(logset, 'logset', 'name'))
+        LOG.logger.info("hostname %s", CONFIG.hostname)
+        LOG.logger.info("key %s", utils.safe_get(logset, 'logset', 'id'))
+        LOG.logger.info("distribution %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distname'))
+        LOG.logger.info("distver %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distver'))
         if logs is not None:
-            LOG.info("logs:")
+            LOG.logger.info("logs:")
             for logname, filepath in logs.items():
-                LOG.info("\tname %s", logname)
-                LOG.info("\tpath %s", filepath)
+                LOG.logger.info("\tname %s", logname)
+                LOG.logger.info("\tpath %s", filepath)
         else:
-            LOG.info("no logs")
+            LOG.logger.info("no logs")
 
 
 def cmd_reinit(args):
@@ -1061,7 +1059,7 @@ def cmd_reinit(args):
     utils.no_more_args(args)
     CONFIG.load(load_include_dirs=False)
     CONFIG.save()
-    LOG.info("Reinitialized")
+    LOG.logger.info("Reinitialized")
 
 
 def cmd_register(args):
@@ -1089,7 +1087,7 @@ def _perform_register():
     CONFIG.agent_key = logset['logset']['id']
     CONFIG.save()
 
-    LOG.info("Registered %s (%s)", CONFIG.name, CONFIG.hostname)
+    LOG.logger.info("Registered %s (%s)", CONFIG.name, CONFIG.hostname)
 
     # Registering logs
     logs = []
@@ -1120,7 +1118,7 @@ def get_filters(available_filters, filter_filenames, log_name, log_id, log_filen
     if not filter_filenames(log_filename):
         _debug_filters(
             " Log blocked by filter_filenames, not following")
-        LOG.info(
+        LOG.logger.info(
             'Not following %s, blocked by filter_filenames', log_name)
         return None
     _debug_filters(
@@ -1213,9 +1211,9 @@ def config_filters():
             _debug_filters("Available filters: %s", available_filters.keys())
             _debug_filters("Filter filenames: %s", filter_filenames)
         except Exception:
-            LOG.error('Cannot import event filter module %s: %s',
+            LOG.logger.error('Cannot import event filter module %s: %s',
                       CONFIG.filters, sys.exc_info()[1])
-            LOG.error('Details: %s', traceback.print_exc(sys.exc_info()))
+            LOG.logger.error('Details: %s', traceback.print_exc(sys.exc_info()))
 
     return (available_filters, filter_filenames)
 
@@ -1231,9 +1229,9 @@ def config_formatters():
             available_formatters = getattr(formatters, 'formatters', {})
             _debug_formatters("Available formatters: %s", available_formatters.keys())
         except Exception:
-            LOG.error('Cannot import event formatter module %s: %s',
+            LOG.logger.error('Cannot import event formatter module %s: %s',
                       CONFIG.formatters, sys.exc_info()[1])
-            LOG.error('Details: %s', traceback.print_exc(sys.exc_info()))
+            LOG.logger.error('Details: %s', traceback.print_exc(sys.exc_info()))
     return available_formatters
 
 
@@ -1327,7 +1325,7 @@ def start_followers(default_transport, states):
         entry_formatter = get_formatters(entry_formatter, available_formatters,
                                          log_name, log_id, log_token)
 
-        LOG.info("Following %s", log_filename)
+        LOG.logger.info("Following %s", log_filename)
 
 
         if log_token is not None or CONFIG.datahub is not None:
@@ -1371,7 +1369,7 @@ def start_followers(default_transport, states):
             multilog_followers.append(follow_multilog)
         else:
             follower = Follower(log_filename, entry_filter, entry_formatter,
-                                transport, states.get(log_filename), CONFIG)
+                                transport, states.get(log_filename), CONFIG, LOG)
             followers.append(follower)
 
     return (followers, transports, multilog_followers)
@@ -1442,7 +1440,7 @@ def create_configured_logs(configured_logs):
     """
     for clog in configured_logs:
         if not clog.destination and not clog.token:
-            LOG.debug("Not following logs for application `%s' "
+            LOG.logger.debug("Not following logs for application `%s' "
                       "as neither `%s' nor `%s' parameter is specified",
                       clog.name, TOKEN_PARAM, DESTINATION_PARAM)
             continue
@@ -1453,11 +1451,11 @@ def create_configured_logs(configured_logs):
                 logset_id = get_or_create_logset(logset_name)
                 token = get_or_create_log(logset_id, logname)
                 if not token:
-                    LOG.error('Ignoring section %s, cannot create log', clog.name)
+                    LOG.logger.error('Ignoring section %s, cannot create log', clog.name)
 
                 clog.token = token
             except ValueError:
-                LOG.error('Ignoring section %s since `%s\' does not contain host',
+                LOG.logger.error('Ignoring section %s since `%s\' does not contain host',
                           clog.name, DESTINATION_PARAM)
 
 
@@ -1508,43 +1506,44 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def monitor_from_local_config(config_dir, log, log_level=logging.INFO):
+def monitor_from_local_config(args, config_dir=None, logger=None, log_level=logging.DEBUG):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
-    _set_log(log)
+    utils.no_more_args(args)
 
     CONFIG.pull_server_side_config = False
     CONFIG.use_ca_provided = True
 
+    if logger is not None:
+        _set_logger(logger)
+
     if log_level is logging.DEBUG:
-        LOG.setLevel(log_level)
+        LOG.logger.setLevel(log_level)
         CONFIG.debug = True
 
-    CONFIG.set_config_dir(config_dir)
+    if config_dir is not None:
+        CONFIG.set_config_dir(config_dir)
     CONFIG.load()
 
-    LOG.info('Initializing configured log from %s' % CONFIG.config_filename)
+    LOG.logger.info('Initializing configured log from %s' % CONFIG.config_filename)
     # Ensure all configured logs are created
     if CONFIG.configured_logs and not CONFIG.datahub:
         create_configured_logs(CONFIG.configured_logs)
 
     # Start default transport channel
-    LOG.info('Initializing log transport')
+    LOG.logger.info('Initializing log transport')
     default_transport = DefaultTransport(CONFIG)
-    LOG.debug('default_transport %s' % default_transport)
     formatter = formats.FormatSyslog(CONFIG.hostname, 'le', CONFIG.metrics.token)
 
-    LOG.info('Initializing metrics')
-    smetrics = metrics.Metrics(CONFIG.metrics, default_transport,
-                               formatter, CONFIG.debug_metrics)
-    LOG.debug('metrics %s' % smetrics)
-    smetrics.start()
+    LOG.logger.info('Initializing metrics')
+    s_metrics = metrics.Metrics(CONFIG.metrics, default_transport, formatter, CONFIG.debug_metrics)
+    s_metrics.start()
 
     followers = []
     transports = []
     follow_multilogs = []
     terminate = TerminationNotifier()
 
-    LOG.info('Initializing log monitor')
+    LOG.logger.info('Initializing log monitor')
     try:
         state = _load_state(CONFIG.state_file)
 
@@ -1561,10 +1560,10 @@ def monitor_from_local_config(config_dir, log, log_level=logging.INFO):
     except KeyboardInterrupt:
         pass
 
-    LOG.info("Shutting down")
+    LOG.logger.info("Shutting down")
     # Stop metrics
-    if smetrics:
-        smetrics.cancel()
+    if s_metrics:
+        s_metrics.cancel()
     # Close followers
     for follower in followers:
         follower.close()
@@ -1577,7 +1576,7 @@ def monitor_from_local_config(config_dir, log, log_level=logging.INFO):
     default_transport.close()
     # Collect statuses
     save_state(CONFIG.state_file, followers)
-    LOG.info("Shut down")
+    LOG.logger.info("Shut down")
 
 
 def cmd_monitor(args):
@@ -1678,11 +1677,11 @@ def cmd_follow(args):
 
     # Check that we don't follow that file already
     if not CONFIG.force and _is_followed(filename):
-        LOG.warning('Already following %s', filename)
+        LOG.logger.warning('Already following %s', filename)
         return
 
     if len(glob.glob(filename)) == 0:
-        LOG.warning('\nWarning: File %s does not exist\n', filename)
+        LOG.logger.warning('\nWarning: File %s does not exist\n', filename)
 
     request_follow(filename, name)
 
@@ -1783,7 +1782,7 @@ def cmd_clean(args):
     """
     utils.no_more_args(args)
     if CONFIG.clean():
-        LOG.info('Configuration clean')
+        LOG.logger.info('Configuration clean')
 
 
 def _logtype_name(logtype_uuid):
@@ -2156,9 +2155,9 @@ def cmd_rm(args):
     try:
         response = requests.delete(addr, headers=headers)
         if response.status_code is 204:
-            LOG.info("Successfully deleted \n")
+            LOG.logger.info("Successfully deleted \n")
         else:
-            LOG.error('Deleting resource failed, status code: %d', response.status_code)
+            LOG.logger.error('Deleting resource failed, status code: %d', response.status_code)
     except requests.exceptions.RequestException as error:
         utils.die(error)
 
@@ -2235,7 +2234,7 @@ def main_root():
         'reinit': cmd_reinit,
         'register': cmd_register,
         'monitor': cmd_monitor,
-        'monitorlocalconfig': monitor_from_local_config(os.getcwd(), LOG, logging.DEBUG),
+        'monitorlocalconfig': monitor_from_local_config,
         'monitordaemon': cmd_monitor_daemon,
         'follow': cmd_follow,
         'followed': cmd_followed,
@@ -2263,7 +2262,7 @@ def main():
     try:
         main_root()
     except FatalConfigurationError as error:
-        LOG.error("Fatal: %s", error.message)
+        LOG.logger.error("Fatal: %s", error.message)
     except KeyboardInterrupt:
         utils.die("\nTerminated", EXIT_TERMINATED)
 

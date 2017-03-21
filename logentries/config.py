@@ -10,11 +10,11 @@ import stat
 import getopt
 import configparser as ConfigParser
 
-import metrics as metrics
-import utils as utils
-from log import log
-from configured_log import ConfiguredLog
-from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+import logentries.metrics as metrics
+import logentries.utils as utils
+import logentries.log
+from logentries.configured_log import ConfiguredLog
+from logentries.constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 
 
 DEFAULT_USER_KEY = NOT_SET
@@ -49,6 +49,7 @@ KEY_LEN = 36
 LE_DEFAULT_SSL_PORT = 20000
 LE_DEFAULT_NON_SSL_PORT = 10000
 
+LOG = logentries.log.LOG
 
 class FatalConfigurationError(Exception):
     """Fatal Config Error"""
@@ -285,7 +286,7 @@ class Config(object):
             os.remove(self.config_filename)
         except OSError as error:
             if error.errno != 2:
-                log.log.warning("Error: %s: %s", self.config_filename, error.strerror)
+                LOG.logger.warning("Error: %s: %s", self.config_filename, error.strerror)
                 return False
         return True
 
@@ -343,7 +344,7 @@ class Config(object):
             if load_include_dirs and self.include:
                 config_files.extend(conf.read(self._list_configs(self.include)))
 
-            log.log.debug('Configuration files loaded: %s', ', '.join(config_files))
+            LOG.logger.debug('Configuration files loaded: %s', ', '.join(config_files))
 
             self._load_parameters(conf)
 
@@ -442,7 +443,7 @@ class Config(object):
         """
         if self.user_key == NOT_SET:
             if ask_for_it:
-                log.log.info(
+                LOG.logger.info(
                     "Account key is required. Enter your Logentries login "
                     "credentials or specify the account key with "
                     "--account-key parameter.")
@@ -516,7 +517,7 @@ class Config(object):
             pname = str(pname_slice[0])
         elif not cmd_line and path is None:
             # For anything not coming in on command line no output is written to command line
-            log.log.error("Error: Pathname argument is empty")
+            LOG.logger.error("Error: Pathname argument is empty")
             return False
         elif not cmd_line and path is not None:
             pname = path
@@ -524,7 +525,7 @@ class Config(object):
         # Verify there is a filename
         if not filename:
             if not cmd_line:
-                log.log.error("Error: No filename detected in the pathname")
+                LOG.logger.error("Error: No filename detected in the pathname")
                 return False
             else:
                 utils.die("\nError: No filename detected - "
@@ -534,14 +535,14 @@ class Config(object):
             # Verify that only one wildcard is in pathname
             if pname.count('*') > 1:
                 if not cmd_line:
-                    log.log.error("Error: More then one wildcard * detected in pathname")
+                    LOG.logger.error("Error: More then one wildcard * detected in pathname")
                     return False
                 else:
                     utils.die("\nError: Only one wildcard * allowed\n" + MULTILOG_USAGE, EXIT_OK)
             # Verify that no wildcard is in filename
             if '*' in filename:
                 if not cmd_line:
-                    log.log.error("Error: Wildcard detected in filename of path argument")
+                    LOG.logger.error("Error: Wildcard detected in filename of path argument")
                     return False
                 else:
                     utils.die("\nError: No wildcard * allowed in filename\n"
@@ -643,7 +644,7 @@ class Config(object):
                 if world_readable:
                     os.chmod(_config, 0o0640)
             except OSError:
-                log.log.warn('Could not adjust permissions for config file %s',
+                LOG.logger.warn('Could not adjust permissions for config file %s',
                              _config, exc_info=True)
 
     def _load_configured_logs(self, conf):
@@ -661,7 +662,7 @@ class Config(object):
                     if xtoken:
                         token = utils.uuid_parse(xtoken)
                         if not token:
-                            log.log.warning("Invalid log token `%s' in application `%s'.",
+                            LOG.logger.warning("Invalid log token `%s' in application `%s'.",
                                             xtoken, name)
                 except ConfigParser.NoOptionError:
                     pass
@@ -669,7 +670,7 @@ class Config(object):
                 try:
                     path = conf.get(name, PATH_PARAM)
                 except ConfigParser.NoOptionError:
-                    log.log.debug("Not following logs for application `%s' as `%s' "
+                    LOG.logger.debug("Not following logs for application `%s' as `%s' "
                                   "parameter is not specified", name, PATH_PARAM)
                     continue
 
@@ -680,6 +681,7 @@ class Config(object):
                 configured_log = ConfiguredLog(name, token,
                                                destination, path, formatter, entry_identifier)
                 self.configured_logs.append(configured_log)
+
 
     def _try_load_param(self, conf, name, key):
         """Try to load a given parameter"""
@@ -732,6 +734,3 @@ class Config(object):
                 utils.die("Cannot parse %s as port. "
                           "Specify a valid --datahub address" % values[1])
         self.datahub = value
-
-
-config_object = Config()#pylint: disable=invalid-name

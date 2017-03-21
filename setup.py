@@ -7,7 +7,7 @@ setup(name='logentries',
       author='Logentries',
       author_email='hello@logentries.com',
       url='https://www.logentries.com/',
-      package_dir={'logentries': 'src'},
+      package_dir={'logentries': 'logentries'},
       packages=['logentries'],
       install_requires=['future==0.16.0', 'configparser==3.5.0', 'filters>=1.1.4'],
       entry_points={
