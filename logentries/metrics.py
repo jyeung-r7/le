@@ -638,11 +638,9 @@ class MetricsConfig(object):
         """Loads metrics configuration."""
         # Basic metrics
         metricDict = conf.get(METRIC)
-        parameters = {}
         for item in self.DEFAULTS:
             try:
                 self.__dict__[item] = metricDict.get(PREFIX + item)
-                parameters[item] = self.__dict__[item]
             except ValueError:
                 pass
         # Process metrics
@@ -658,7 +656,6 @@ class MetricsConfig(object):
             self.processes.append([item, pattern, token])
         except ValueError:
             pass
-        return parameters
 
     def load_ini(self, conf):
         """Loads metrics configuration."""
