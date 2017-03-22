@@ -98,7 +98,7 @@ def report(what):
     """Write text to stderr"""
     log.error(what)
     sys.stderr.write(what)
-    sys.stderr.write("\n")
+    sys.stderr.write('\n')
 
 
 class ServerHTTPSConnection(http.client.HTTPSConnection):

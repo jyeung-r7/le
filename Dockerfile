@@ -23,6 +23,6 @@ COPY .pylintrc le/pylintrc
 COPY run_tests.sh /run_tests.sh
 COPY run_tests.sh /run_tests.sh
 RUN chmod +x /run_tests.sh
-
 RUN pip3 install pylint
 RUN cd le && python3 setup.py build && python3 setup.py install
+

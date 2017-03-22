@@ -30,6 +30,7 @@ except ImportError:
 SECT = 'Main'
 # Common option prefix
 PREFIX = 'metrics-'
+METRIC = 'metrics'
 
 # Configuration names
 TOKEN = 'token'
@@ -633,7 +634,33 @@ class MetricsConfig(object):
             self.__dict__[item] = self.DEFAULTS[item]
         self.processes = []
 
-    def load(self, conf):
+    def load_json(self, conf):
+        """Loads metrics configuration."""
+        # Basic metrics
+        metricDict = conf.get(METRIC)
+        parameters = {}
+        for item in self.DEFAULTS:
+            try:
+                self.__dict__[item] = metricDict.get(PREFIX + item)
+                parameters[item] = self.__dict__[item]
+            except ValueError:
+                pass
+        # Process metrics
+        try:
+            try:
+                token = metricDict.get(PREFIX + TOKEN)
+            except ValueError:
+                try:
+                    token = metricDict.get(TOKEN)
+                except ValueError:
+                    token = ''
+            pattern = metricDict.get(PREFIX + PROCESS)
+            self.processes.append([item, pattern, token])
+        except ValueError:
+            pass
+        return parameters
+
+    def load_ini(self, conf):
         """Loads metrics configuration."""
         # Basic metrics
         for item in self.DEFAULTS:

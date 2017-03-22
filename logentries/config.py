@@ -8,8 +8,8 @@ import os
 import socket
 import stat
 import getopt
+import json
 import configparser as ConfigParser
-
 import logentries.metrics as metrics
 import logentries.utils as utils
 import logentries.log
@@ -21,6 +21,7 @@ DEFAULT_USER_KEY = NOT_SET
 DEFAULT_AGENT_KEY = NOT_SET
 PID_FILE = '/var/run/logentries.pid'
 LE_CONFIG = 'config'  # Default configuration file
+JSON_CONFIG = 'logging.json'
 CONFIG_DIR_SYSTEM = '/etc/le'
 CONFIG_DIR_USER = '.le'
 CONF_SUFFIX = '.conf'  # Expected suffix of configuration files
@@ -48,7 +49,10 @@ PROXY_PORT_PARAM = "proxy-port"
 KEY_LEN = 36
 LE_DEFAULT_SSL_PORT = 20000
 LE_DEFAULT_NON_SSL_PORT = 10000
-
+CONFIG_PARAM = 'config'
+CONFIG_LOGS = 'logs'
+LOG_NAME = 'name'
+EMPTY = 0
 LOG = logentries.log.LOG
 
 class FatalConfigurationError(Exception):
@@ -57,13 +61,12 @@ class FatalConfigurationError(Exception):
         super(FatalConfigurationError, self).__init__(msg)
 
 
-
 class Config(object):
     """Config class"""
 
     def __init__(self):
         self.config_dir_name = self._get_config_dir()
-        self.config_filename = self.config_dir_name + LE_CONFIG
+        self.config_filename = self.config_dir_name + JSON_CONFIG
         self.config_d = os.path.join(self.config_dir_name, 'conf.d')
         self.include = NOT_SET
 
@@ -101,7 +104,7 @@ class Config(object):
         self.multilog = False
         self.state_file = NOT_SET
         # Behaviour associated with daemontools/multilog
-
+        self.use_json = False
         self._init_proxy()
         self._init_debug_options()
 
@@ -163,7 +166,7 @@ class Config(object):
                     std std-all name= hostname= type= pid-file= debug no-defaults
                     suppress-ssl use-ca-provided force-api-host= force-domain=
                     system-stat-token= datahub=
-                    pull-server-side-config= config= config.d= multilog debug-multilog"""
+                    pull-server-side-config= config= config.d= multilog debug-multilog json"""
         try:
             optlist, args = getopt.gnu_getopt(params, '', param_list.split())
             for name, value in optlist:
@@ -260,6 +263,8 @@ class Config(object):
                 elif name == "--multilog":
                     # self.multilog is only True if pathname is good
                     self.multilog = self.validate_pathname(args, True, None)
+                elif name == "--json":
+                    self.use_json = True
 
             if self.datahub_ip and not self.datahub_port:
                 if self.suppress_ssl:
@@ -290,12 +295,61 @@ class Config(object):
                 return False
         return True
 
-    def load(self, load_include_dirs=True):
+    def load_json(self, load_include_dirs=True):
         """
         Initializes configuration parameters from the configuration
         file.  Returns True if successful, False otherwise. Does not
         touch already defined parameters.
 
+        Args:
+          load_include_dirs (bool): specify if files from the include
+                                    directory are loaded
+        """
+
+        try:
+            # Read configuration files from default directories
+            config_file = self.config_filename
+
+            # Read in json config file
+            with open(config_file) as data_file:
+                d_conf = json.loads(data_file.read())
+            d_configFile = d_conf[CONFIG_PARAM]
+
+            LOG.logger.debug('Configuration file loaded: %s', config_file)
+            self._load_parameters_json(d_configFile)
+            self._configure_proxy_json(d_configFile)
+            new_suppress_ssl = d_configFile.get(SUPPRESS_SSL_PARAM)
+
+            if new_suppress_ssl == 'True':
+                self.suppress_ssl = new_suppress_ssl == 'True'
+            new_force_domain = d_configFile.get(FORCE_DOMAIN_PARAM)
+            if new_force_domain:
+                self.force_domain = new_force_domain
+            if self.datahub == NOT_SET:
+                self._set_datahub_settings(
+                    d_configFile.get(DATAHUB_PARAM), should_die=False)
+            if self.system_stats_token == NOT_SET:
+                system_stats_token_str = d_configFile.get(SYSSTAT_TOKEN_PARAM)
+                if system_stats_token_str != '':
+                    self.system_stats_token = system_stats_token_str
+            if self.state_file == NOT_SET:
+                state_file_str = d_configFile.get(STATE_FILE_PARAM)
+                if state_file_str:
+                    self.state_file = state_file_str
+
+            self.metrics.load_json(d_configFile)
+            self._load_configured_logs_json(d_configFile, LOG.logger)
+
+        except ValueError:
+            print('JSON load error')
+
+        return True
+
+    def load_ini(self, load_include_dirs=True):
+        """
+        Initializes configuration parameters from the configuration
+        file.  Returns True if successful, False otherwise. Does not
+        touch already defined parameters.
         Args:
           load_include_dirs (bool): specify if files from the include
                                     directory are loaded
@@ -325,7 +379,7 @@ class Config(object):
             })
 
             # Read configuration files from default directories
-            config_files = [self.config_filename]
+            config_files = [self.config_dir_name + LE_CONFIG]
             if load_include_dirs:
                 config_files.extend(self._list_configs(self.config_d))
 
@@ -345,14 +399,13 @@ class Config(object):
                 config_files.extend(conf.read(self._list_configs(self.include)))
 
             LOG.logger.debug('Configuration files loaded: %s', ', '.join(config_files))
-
-            self._load_parameters(conf)
-
-            self._configure_proxy(conf)
+            self._load_parameters_ini(conf)
+            self._configure_proxy_ini(conf)
 
             new_suppress_ssl = conf.get(MAIN_SECT, SUPPRESS_SSL_PARAM)
             if new_suppress_ssl == 'True':
                 self.suppress_ssl = new_suppress_ssl == 'True'
+
             new_force_domain = conf.get(MAIN_SECT, FORCE_DOMAIN_PARAM)
             if new_force_domain:
                 self.force_domain = new_force_domain
@@ -369,14 +422,21 @@ class Config(object):
                 if state_file_str:
                     self.state_file = state_file_str
 
-            self.metrics.load(conf)
-
-            self._load_configured_logs(conf)
+            self.metrics.load_ini(conf)
+            self._load_configured_logs_ini(conf)
 
         except (ConfigParser.NoSectionError,
                 ConfigParser.NoOptionError,
                 ConfigParser.MissingSectionHeaderError) as error:
             raise FatalConfigurationError('%s' % error)
+        return True
+
+    # method to determine type of config file in root directory /etc/le or local directory ~/.le and return the appropriate load method
+    def load(self, load_include_dirs=True):
+        if self.use_json:
+            self.load_json()
+        else:
+            self.load_ini()
         return True
 
     def save(self):  # pylint: disable=too-many-branches
@@ -597,7 +657,23 @@ class Config(object):
         """
         return len(key) == KEY_LEN
 
-    def _load_parameters(self, conf):
+    def _load_parameters_json(self, conf):
+        """Load parameters from config file provided"""
+        self.user_key = conf.get(USER_KEY_PARAM)
+        self.agent_key = conf.get(AGENT_KEY_PARAM)
+        self.api_key = conf.get(API_KEY_PARAM)
+        self.filters = conf.get(FILTERS_PARAM)
+        self.formatters = conf.get(FORMATTERS_PARAM)
+        self.formatter = conf.get(FORMATTER_PARAM)
+        self.entry_identifier = conf.get(ENTRY_IDENTIFIER_PARAM)
+        self.hostname = conf.get(HOSTNAME_PARAM)
+        if self.pull_server_side_config == NOT_SET:
+            new_pull_server_side_config = conf.get(PULL_SERVER_SIDE_CONFIG_PARAM)
+            self.pull_server_side_config = new_pull_server_side_config == 'True'
+            if new_pull_server_side_config is None:
+                self.pull_server_side_config = True
+
+    def _load_parameters_ini(self, conf):
         """Load parameters from config file provided"""
         self.user_key = self._get_if_def(conf, self.user_key, USER_KEY_PARAM)
         self.agent_key = self._get_if_def(conf, self.agent_key, AGENT_KEY_PARAM)
@@ -614,7 +690,26 @@ class Config(object):
             if new_pull_server_side_config is None:
                 self.pull_server_side_config = True
 
-    def _configure_proxy(self, conf):
+    def _configure_proxy_json(self, conf):
+        """Load proxy configuration settings from config file provided"""
+        if self.proxy_type is NOT_SET:
+            self.proxy_type = conf.get(PROXY_TYPE_PARAM)
+            if not self.proxy_type:
+                self.proxy_type = NOT_SET
+        if self.proxy_url is NOT_SET:
+            self.proxy_url = conf.get(PROXY_URL_PARAM)
+            if not self.proxy_url:
+                self.proxy_url = NOT_SET
+        if self.proxy_port is NOT_SET:
+            proxy_port = conf.get(PROXY_PORT_PARAM)
+            if not proxy_port:
+                self.proxy_port = NOT_SET
+            else:
+                self.proxy_port = int(proxy_port)
+
+        self.use_proxy = self.proxy_type and self.proxy_url and self.proxy_port
+
+    def _configure_proxy_ini(self, conf):
         """Load proxy configuration settings from config file provided"""
         if self.proxy_type is NOT_SET:
             self.proxy_type = conf.get(MAIN_SECT, PROXY_TYPE_PARAM)
@@ -647,7 +742,52 @@ class Config(object):
                 LOG.logger.warn('Could not adjust permissions for config file %s',
                              _config, exc_info=True)
 
-    def _load_configured_logs(self, conf):
+    def _load_configured_logs_json(self, conf, logger):
+        """
+        Loads configured logs from the configuration file.
+        These are logs that use tokens.
+        """
+        self.configured_logs = []
+        logList = conf.get(CONFIG_LOGS)
+        for section in logList:
+                parameters_dict = {} # unit test dictionary
+                token = ''
+                path = None
+                name = section.get(LOG_NAME)
+                parameters_dict[LOG_NAME] = name
+                try:
+                    if TOKEN_PARAM in section:
+                        xtoken = section.get(TOKEN_PARAM)
+                        parameters_dict[TOKEN_PARAM] = xtoken
+                        if xtoken:
+                            token = utils.uuid_parse(xtoken)
+                            if not token:
+                                logger.warn("Invalid log token `%s' in application `%s'.",
+                                            xtoken, name)
+                except ValueError:
+                    pass
+
+                if PATH_PARAM in section:
+                    path = section.get(PATH_PARAM)
+                    parameters_dict[PATH_PARAM] = path
+                if path is None:
+                    logger.debug("Not following logs for application `%s' as `%s' "
+                                  "parameter is not specified", name, path)
+                    continue
+
+                destination = self._try_load_param_json(section, DESTINATION_PARAM)
+                formatter = self._try_load_param_json(section, FORMATTER_PARAM)
+                entry_identifier = self._try_load_param_json(section, ENTRY_IDENTIFIER_PARAM)
+                parameters_dict.update({DESTINATION_PARAM:destination, FORMATTER_PARAM:formatter,
+                                        ENTRY_IDENTIFIER_PARAM:entry_identifier} )
+
+                configured_log = ConfiguredLog(name, token,
+                                               destination, path, formatter, entry_identifier)
+                self.configured_logs.append(configured_log)
+
+                return parameters_dict
+
+    def _load_configured_logs_ini(self, conf):
         """
         Loads configured logs from the configuration file.
         These are logs that use tokens.
@@ -674,16 +814,21 @@ class Config(object):
                                   "parameter is not specified", name, PATH_PARAM)
                     continue
 
-                destination = self._try_load_param(conf, name, DESTINATION_PARAM)
-                formatter = self._try_load_param(conf, name, FORMATTER_PARAM)
-                entry_identifier = self._try_load_param(conf, name, ENTRY_IDENTIFIER_PARAM)
+                destination = self._try_load_param_ini(conf, name, DESTINATION_PARAM)
+                formatter = self._try_load_param_ini(conf, name, FORMATTER_PARAM)
+                entry_identifier = self._try_load_param_ini(conf, name, ENTRY_IDENTIFIER_PARAM)
 
                 configured_log = ConfiguredLog(name, token,
                                                destination, path, formatter, entry_identifier)
                 self.configured_logs.append(configured_log)
 
 
-    def _try_load_param(self, conf, name, key):
+    def _try_load_param_json(self, conf, key):
+        """Try to load a given parameter"""
+        param = conf.get(key,'')
+        return param
+
+    def _try_load_param_ini(self, conf, name, key):
         """Try to load a given parameter"""
         try:
             param = conf.get(name, key)

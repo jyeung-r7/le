@@ -29,14 +29,14 @@ import threading
 import time
 import traceback
 import requests
+import http.client
 
 # Python 2/3 compatibility
 try:
     import Queue as queue
 except ImportError:
     import queue
-from queue import Queue
-import http.client
+
 # Do not remove - fix for Python #8484
 try:
     import hashlib #pylint: disable=unused-import
@@ -397,7 +397,7 @@ class Transport(object):
         self.port = port
         self.use_ssl = use_ssl
         self.preamble = preamble
-        self._entries = Queue(SEND_QUEUE_SIZE)
+        self._entries = queue.Queue(SEND_QUEUE_SIZE)
         self._socket = None # Socket with optional TLS encyption
         self._debug_transport_events = debug_transport_events
 
@@ -602,7 +602,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except queue.Empty:
+                except queue.Empty: #pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -1073,7 +1073,6 @@ def cmd_register(args):
     CONFIG.load()
     _perform_register()
 
-
 def _perform_register():
     if CONFIG.agent_key != NOT_SET and not CONFIG.force:
         utils.report("Warning: Server already registered. "
@@ -1239,7 +1238,8 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    return utils.safe_get(log_, 'log', 'tokens')[0]
+    if 'log' in log_ and utils.safe_get(log_, 'log', 'souce_type') is 'token':
+        return utils.safe_get(log_, 'log', 'tokens')[0]
 
 
 def construct_configured_log(configured_log):
@@ -1524,6 +1524,7 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
 
     if config_dir is not None:
         CONFIG.set_config_dir(config_dir)
+
     CONFIG.load()
 
     LOG.logger.info('Initializing configured log from %s' % CONFIG.config_filename)
@@ -2211,7 +2212,7 @@ def main_root():
     args = CONFIG.process_params(sys.argv[1:])
 
     if CONFIG.debug:
-        LOG.setLevel(logging.DEBUG)
+        LOG.logger.setLevel(logging.DEBUG)
     if CONFIG.debug_system:
         utils.die(system_detect(True))
     if CONFIG.debug_loglist:
