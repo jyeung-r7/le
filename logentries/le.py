@@ -29,11 +29,13 @@ import threading
 import time
 import traceback
 import requests
+
+# Python 2/3 compatibility
 try:
     import Queue as queue
 except ImportError:
     import queue
-    from queue import Queue
+from queue import Queue
 import http.client
 # Do not remove - fix for Python #8484
 try:
