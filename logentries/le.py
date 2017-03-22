@@ -1508,7 +1508,7 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def monitor_from_local_config(args, config_dir=None, logger=None, log_level=logging.DEBUG):
+def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=None, logger=None, log_level=logging.DEBUG):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
     utils.no_more_args(args)
 
@@ -1551,11 +1551,10 @@ def monitor_from_local_config(args, config_dir=None, logger=None, log_level=logg
 
         # Load logs to follow and start following them
         if not CONFIG.debug_stats_only:
-            (followers, transports, follow_multilogs) = \
-                start_followers(default_transport, state)
+            (followers, transports, follow_multilogs) = start_followers(default_transport, state)
 
         # Periodically save state
-        while not terminate.terminate:
+        while not terminate.terminate or not shutdown_evt.is_set():
             save_state(CONFIG.state_file, followers)
 
             time.sleep(1)
