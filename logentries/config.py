@@ -341,7 +341,7 @@ class Config(object):
             self._load_configured_logs_json(d_configFile, LOG.logger)
 
         except ValueError:
-            print('JSON load error')
+            LOG.logger.error("Error: %s JSON configuration not formatted correctly", config_file)
 
         return True
 
@@ -750,15 +750,12 @@ class Config(object):
         self.configured_logs = []
         logList = conf.get(CONFIG_LOGS)
         for section in logList:
-                parameters_dict = {} # unit test dictionary
-                token = ''
+                token = None
                 path = None
                 name = section.get(LOG_NAME)
-                parameters_dict[LOG_NAME] = name
                 try:
                     if TOKEN_PARAM in section:
                         xtoken = section.get(TOKEN_PARAM)
-                        parameters_dict[TOKEN_PARAM] = xtoken
                         if xtoken:
                             token = utils.uuid_parse(xtoken)
                             if not token:
@@ -769,7 +766,6 @@ class Config(object):
 
                 if PATH_PARAM in section:
                     path = section.get(PATH_PARAM)
-                    parameters_dict[PATH_PARAM] = path
                 if path is None:
                     logger.debug("Not following logs for application `%s' as `%s' "
                                   "parameter is not specified", name, path)
@@ -778,14 +774,11 @@ class Config(object):
                 destination = self._try_load_param_json(section, DESTINATION_PARAM)
                 formatter = self._try_load_param_json(section, FORMATTER_PARAM)
                 entry_identifier = self._try_load_param_json(section, ENTRY_IDENTIFIER_PARAM)
-                parameters_dict.update({DESTINATION_PARAM:destination, FORMATTER_PARAM:formatter,
-                                        ENTRY_IDENTIFIER_PARAM:entry_identifier} )
 
                 configured_log = ConfiguredLog(name, token,
                                                destination, path, formatter, entry_identifier)
                 self.configured_logs.append(configured_log)
 
-                return parameters_dict
 
     def _load_configured_logs_ini(self, conf):
         """
@@ -796,7 +789,7 @@ class Config(object):
 
         for name in conf.sections():
             if name != MAIN_SECT:
-                token = ''
+                token = None
                 try:
                     xtoken = conf.get(name, TOKEN_PARAM)
                     if xtoken:
