@@ -18,9 +18,6 @@ LINE_SEPARATOR = '\xe2\x80\xa8'
 # Maximal queue size for events sent
 SEND_QUEUE_SIZE = 32000
 
-# Maximal pattern priority
-MAX_PATTERN_PRIORITY = 100000
-
 # Logentries server details
 LE_SERVER_API = '/'
 
