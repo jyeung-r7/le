@@ -639,23 +639,7 @@ class MetricsConfig(object):
         # Basic metrics
         metricDict = conf.get(METRIC)
         for item in self.DEFAULTS:
-            try:
                 self.__dict__[item] = metricDict.get(PREFIX + item)
-            except ValueError:
-                pass
-        # Process metrics
-        try:
-            try:
-                token = metricDict.get(PREFIX + TOKEN)
-            except ValueError:
-                try:
-                    token = metricDict.get(TOKEN)
-                except ValueError:
-                    token = ''
-            pattern = metricDict.get(PREFIX + PROCESS)
-            self.processes.append([item, pattern, token])
-        except ValueError:
-            pass
 
     def load_ini(self, conf):
         """Loads metrics configuration."""
