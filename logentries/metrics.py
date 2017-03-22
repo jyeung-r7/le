@@ -14,7 +14,7 @@ import time
 import traceback
 
 import configparser as ConfigParser
-import logentries.formats as formats
+from logentries import formats
 from logentries.__init__ import __version__
 from logentries.utils import report
 

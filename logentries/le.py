@@ -43,10 +43,10 @@ try:
 except ImportError:
     pass
 
-import logentries.formats as formats
-import logentries.socks as socks
-import logentries.utils as utils
-import logentries.metrics as metrics
+from logentries import formats
+from logentries import socks
+from logentries import utils
+from logentries import metrics
 from logentries.log import LOG
 from logentries.config import Config, FatalConfigurationError
 from logentries.followers import Follower, MultilogFollower
