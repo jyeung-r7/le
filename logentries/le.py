@@ -1514,7 +1514,7 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
 
     CONFIG.pull_server_side_config = False
     CONFIG.use_ca_provided = True
-
+    CONFIG.use_json = True
     if logger is not None:
         _set_logger(logger)
 
