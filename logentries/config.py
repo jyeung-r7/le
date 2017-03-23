@@ -340,8 +340,8 @@ class Config(object):
             self.metrics.load_json(d_configFile)
             self._load_configured_logs_json(d_configFile, LOG.logger)
 
-        except ValueError:
-            LOG.logger.error("Error: %s JSON configuration not formatted correctly", config_file)
+        except ValueError as e:
+            LOG.logger.error("Error: %s JSON configuration not formatted correctly %s", config_file, e)
 
         return True
 
