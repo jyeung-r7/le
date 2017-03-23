@@ -1508,7 +1508,7 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=None, logger=None, log_level=logging.DEBUG):
+def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=None, logger=None, debug=True):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
     utils.no_more_args(args)
 
@@ -1518,8 +1518,7 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
     if logger is not None:
         _set_logger(logger)
 
-    if log_level is logging.DEBUG:
-        LOG.logger.setLevel(log_level)
+    if debug:
         CONFIG.debug = True
 
     if config_dir is not None:
