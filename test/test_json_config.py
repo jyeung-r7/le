@@ -119,11 +119,9 @@ class TestJsonConfig(unittest.TestCase):
     # test the _load_configured_logs_json() method correctly pulls the right parameters and associated values.
     @mock.patch('logging.log')
     def test_load_configured_logs_json(self, mock_logger):
-
         # Read in json config file
         d_conf = json.loads(self.json_file)
         d_configFile = d_conf['config']
-
         CONFIG = Config()
 
         expected_log_list = []
