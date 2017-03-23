@@ -1524,6 +1524,8 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
 
     if config_dir is not None:
         CONFIG.set_config_dir(config_dir)
+    elif CONFIG.use_json:
+        CONFIG.set_config_dir(CONFIG.config_dir_name)
 
     CONFIG.load()
 
