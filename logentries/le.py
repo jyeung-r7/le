@@ -1519,6 +1519,7 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
         _set_logger(logger)
 
     if debug:
+        LOG.logger.setLevel(logging.DEBUG)
         CONFIG.debug = True
 
     if config_dir is not None:
