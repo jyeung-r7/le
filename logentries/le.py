@@ -1238,7 +1238,7 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    if 'log' in log_ and utils.safe_get(log_, 'log', 'souce_type') is 'token':
+    if 'log' in log_ and utils.safe_get(log_, 'log', 'source_type') is 'token':
         return utils.safe_get(log_, 'log', 'tokens')[0]
 
 
@@ -1508,22 +1508,24 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=None, logger=None, log_level=logging.DEBUG):
+def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=None, logger=None, debug=True):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
     utils.no_more_args(args)
 
     CONFIG.pull_server_side_config = False
     CONFIG.use_ca_provided = True
-
+    CONFIG.use_json = True
     if logger is not None:
         _set_logger(logger)
 
-    if log_level is logging.DEBUG:
-        LOG.logger.setLevel(log_level)
+    if debug:
+        LOG.logger.setLevel(logging.DEBUG)
         CONFIG.debug = True
 
     if config_dir is not None:
         CONFIG.set_config_dir(config_dir)
+    elif CONFIG.use_json:
+        CONFIG.set_config_dir(CONFIG.config_dir_name)
 
     CONFIG.load()
 
