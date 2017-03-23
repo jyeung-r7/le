@@ -66,7 +66,7 @@ class Config(object):
 
     def __init__(self):
         self.config_dir_name = self._get_config_dir()
-        self.config_filename = self.config_dir_name + JSON_CONFIG
+        self.config_filename = os.path.join(self.config_dir_name, LE_CONFIG)
         self.config_d = os.path.join(self.config_dir_name, 'conf.d')
         self.include = NOT_SET
 
@@ -547,7 +547,10 @@ class Config(object):
 
     def set_config_dir(self, config_dir):
         self.config_dir_name = utils.safe_path_ending(config_dir)
-        self.config_filename = self.config_dir_name + LE_CONFIG
+        if self.use_json:
+            self.config_filename = self.config_dir_name + JSON_CONFIG
+        else:
+            self.config_filename = self.config_dir_name + LE_CONFIG
         self.config_d = os.path.join(self.config_dir_name, 'conf.d')
 
     @staticmethod

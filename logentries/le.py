@@ -1238,7 +1238,7 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    if 'log' in log_ and utils.safe_get(log_, 'log', 'souce_type') is 'token':
+    if 'log' in log_ and utils.safe_get(log_, 'log', 'source_type') is 'token':
         return utils.safe_get(log_, 'log', 'tokens')[0]
 
 
