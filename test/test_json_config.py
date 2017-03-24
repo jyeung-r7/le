@@ -1,9 +1,6 @@
 import unittest
 from unittest import main
 import json
-import sys, os
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
-import sys
 import logging
 import mock
 from logentries.config import Config
@@ -64,7 +61,7 @@ class TestJsonConfig(unittest.TestCase):
         "logs": [
           {
             "name": "incorrect_token",
-            "token": "hello",
+            "token": "incorrect_token",
             "path": "/var/log/incorrect_token",
             "enabled": "true"
           }
@@ -132,7 +129,7 @@ class TestJsonConfig(unittest.TestCase):
     }'''
 
 
-    #    test the metrics.load_json() method correctly pulls the right parameters and associated values.
+    # test the metrics.load_json() method correctly pulls the right parameters and associated values.
     def test_metrics_load_json(self):
         # Read in json config file
         d_conf = json.loads(self.json_file)
@@ -146,7 +143,7 @@ class TestJsonConfig(unittest.TestCase):
 
         self.assertDictEqual(result_dict, expected_dict, msg=None)
 
-    #    test the metrics.load_json() method when incorrect parameter names are given
+    # test the metrics.load_json() method when incorrect parameter names are given.
     def test_metrics_load_json(self):
         # Read in json config file
         d_conf = json.loads(self.json_file_incorrect_names)
@@ -177,7 +174,7 @@ class TestJsonConfig(unittest.TestCase):
 
         self.assertCountEqual(expected_log_list, actual_log_result, msg=None)
 
-    # test the _load_configured_logs_json() when incorrect parameter names are given
+    # test the _load_configured_logs_json() when incorrect parameter names are given.
     @mock.patch('logging.log')
     def test_load_configured_logs_json(self, mock_logger):
         # Read in json config file
@@ -192,7 +189,7 @@ class TestJsonConfig(unittest.TestCase):
 
         self.assertCountEqual(expected_log_list, actual_log_result, msg=None)
 
-    # test the _load_configured_logs_json() when incorrect token entered
+    # test the _load_configured_logs_json() when incorrect token entered.
     @mock.patch('logging.log')
     def test_load_configured_logs_json_token(self, mock_logger):
         CONFIG = Config()

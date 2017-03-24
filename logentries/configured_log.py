@@ -8,7 +8,6 @@ class ConfiguredLog(object):
 
     """Configured Log Class"""
 
-
     def __init__(self, name, token, destination, path, formatter, entry_identifier):
         self.name = name
         self.token = token
