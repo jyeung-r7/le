@@ -197,7 +197,7 @@ class TestJsonConfig(unittest.TestCase):
     def test_load_configured_logs_json_token(self, mock_logger):
         CONFIG = Config()
         name = "incorrect_token"
-        token = "hello"
+        token = "incorrect_token"
 
         # Read in json config file
         d_conf = json.loads(self.json_file_incorrect_token)
