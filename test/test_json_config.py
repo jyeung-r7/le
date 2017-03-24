@@ -101,6 +101,36 @@ class TestJsonConfig(unittest.TestCase):
       }
     }'''
 
+    json_file_incorrect_names = '''{
+      "config": {
+        "hostname": "mgarewal",
+        "endpoint": "data.logentries.com",
+        "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
+        "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
+        "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
+        "metrics": {
+          "system-stat-token-false": "627d011e-0d97-11e7-9b83-6c0b84a93740",
+          "system-stat-enabled-false": "true",
+          "metrics-false": "60s",
+          "metrics-false": "system",
+          "metrics-false": "core",
+          "metrics-false": "system",
+          "metrics-false": "system",
+          "metrics-false": "sum eth0",
+          "metrics-false": "sum sda4 sda5",
+          "metrics-false": "/"
+        },
+        "logs": [
+          {
+            "name_false": "GreenLog",
+            "token_false": "09da4e87-882e-41f1-bf50-5f8888888888",
+            "path_false": "/var/log/incorrect_token",
+            "enabled_false": "true"
+          }
+        ]
+      }
+    }'''
+
 
     #    test the metrics.load_json() method correctly pulls the right parameters and associated values.
     def test_metrics_load_json(self):
@@ -110,6 +140,20 @@ class TestJsonConfig(unittest.TestCase):
         self.metrics = metrics.MetricsConfig()
         expected_dict = {'processes': [], 'net': 'sum eth0', 'space' : '/', 'disk': 'sum sda4 sda5', 'interval': '60s', 'swap': 'system',
                          'vcpu': 'core', 'cpu': 'system', 'mem': 'system', 'token': None}
+
+        self.metrics.load_json(d_configFile)
+        result_dict = self.metrics.__dict__
+
+        self.assertDictEqual(result_dict, expected_dict, msg=None)
+
+    #    test the metrics.load_json() method when incorrect parameter names are given
+    def test_metrics_load_json(self):
+        # Read in json config file
+        d_conf = json.loads(self.json_file_incorrect_names)
+        d_configFile = d_conf['config']
+        self.metrics = metrics.MetricsConfig()
+        expected_dict = {'processes': [], 'net': None, 'space' : None, 'disk': None, 'interval': None, 'swap': None,
+                         'vcpu': None, 'cpu': None, 'mem': None, 'token': None}
 
         self.metrics.load_json(d_configFile)
         result_dict = self.metrics.__dict__
@@ -131,7 +175,22 @@ class TestJsonConfig(unittest.TestCase):
         CONFIG._load_configured_logs_json(d_configFile, mock_logger)
         actual_log_result = CONFIG.configured_logs
 
-        self.assertEqual(Counter(expected_log_list), Counter(actual_log_result), msg=None)
+        self.assertCountEqual(expected_log_list, actual_log_result, msg=None)
+
+    # test the _load_configured_logs_json() when incorrect parameter names are given
+    @mock.patch('logging.log')
+    def test_load_configured_logs_json(self, mock_logger):
+        # Read in json config file
+        d_conf = json.loads(self.json_file_incorrect_names)
+        d_configFile = d_conf['config']
+        CONFIG = Config()
+
+        expected_log_list = []
+
+        CONFIG._load_configured_logs_json(d_configFile, mock_logger)
+        actual_log_result = CONFIG.configured_logs
+
+        self.assertCountEqual(expected_log_list, actual_log_result, msg=None)
 
     # test the _load_configured_logs_json() when incorrect token entered
     @mock.patch('logging.log')
