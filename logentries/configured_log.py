@@ -18,3 +18,16 @@ class ConfiguredLog(object):
         self.logset = None
         self.logset_id = None
         self.log_id = None
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self.name == other.name and
+                self.token == other.token and
+                self.destination == other.destination and
+                self.path == other.path and
+                self.formatter == other.formatter and
+                self.entry_identifier == other.entry_identifier and
+                self.logset == other.logset and
+                self.logset_id == other.logset_id and
+                self.log_id == other.logset_id)
+        return False
