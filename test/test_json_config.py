@@ -11,7 +11,7 @@ from collections import Counter
 class TestJsonConfig(unittest.TestCase):
     json_file = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -41,7 +41,7 @@ class TestJsonConfig(unittest.TestCase):
 
     json_file_incorrect_token = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -71,7 +71,7 @@ class TestJsonConfig(unittest.TestCase):
 
     json_file_no_path = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -100,7 +100,7 @@ class TestJsonConfig(unittest.TestCase):
 
     json_file_incorrect_names = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -130,7 +130,7 @@ class TestJsonConfig(unittest.TestCase):
 
     windows_json_file = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -164,7 +164,7 @@ class TestJsonConfig(unittest.TestCase):
 
     windows_json_file_incorrect_token = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
