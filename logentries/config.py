@@ -14,7 +14,8 @@ import logentries.metrics as metrics
 import logentries.utils as utils
 import logentries.log
 from logentries.configured_log import ConfiguredLog
-from logentries.constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+from logentries.constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM, \
+    WINDOWS_TOKEN_PARAM, WINDOWS_ENABLED
 
 
 DEFAULT_USER_KEY = NOT_SET
@@ -51,6 +52,7 @@ LE_DEFAULT_SSL_PORT = 20000
 LE_DEFAULT_NON_SSL_PORT = 10000
 CONFIG_PARAM = 'config'
 CONFIG_LOGS = 'logs'
+WINDOWS_LOGS = 'windows-eventlog'
 LOG_NAME = 'name'
 EMPTY = 0
 LOG = logentries.log.LOG
@@ -82,6 +84,7 @@ class Config(object):
         self.system_stats_token = NOT_SET
         self.pull_server_side_config = NOT_SET
         self.configured_logs = []
+        self.windows_eventlogs = {}
         self.metrics = metrics.MetricsConfig()
 
         # Special options
@@ -339,6 +342,7 @@ class Config(object):
 
             self.metrics.load_json(d_configFile)
             self._load_configured_logs_json(d_configFile, LOG.logger)
+            self._load_windows_configured_json(d_configFile, LOG.logger)
 
         except ValueError as e:
             LOG.logger.error("Error: %s JSON configuration not formatted correctly %s", config_file, e)
@@ -745,6 +749,28 @@ class Config(object):
             except OSError:
                 LOG.logger.warn('Could not adjust permissions for config file %s',
                              _config, exc_info=True)
+
+    def _load_windows_configured_json(self, conf, logger):
+        """
+            Loads configured windows parameters from the configuration file.
+            These parameters contain the token and settings for following windows event logs.
+        """
+        self.windows_eventlogs = {WINDOWS_ENABLED: False, WINDOWS_TOKEN_PARAM: None}
+
+        # check if windows event log is specified in the configuration file
+        if WINDOWS_LOGS in conf:
+            windows_conf = conf.get(WINDOWS_LOGS)
+            windows_enabled = windows_conf.get(WINDOWS_ENABLED)
+            wtoken = windows_conf.get(WINDOWS_TOKEN_PARAM)
+            if wtoken:
+                token = utils.uuid_parse(wtoken)
+                if not token:
+                    logger.warn("Invalid log token `%s' in application `%s'.",
+                                token, WINDOWS_LOGS)
+                else:
+                    self.windows_eventlogs[WINDOWS_ENABLED] = windows_enabled
+                    self.windows_eventlogs[WINDOWS_TOKEN_PARAM] = token
+
 
     def _load_configured_logs_json(self, conf, logger):
         """

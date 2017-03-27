@@ -11,7 +11,7 @@ from collections import Counter
 class TestJsonConfig(unittest.TestCase):
     json_file = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -41,7 +41,7 @@ class TestJsonConfig(unittest.TestCase):
 
     json_file_incorrect_token = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -71,7 +71,7 @@ class TestJsonConfig(unittest.TestCase):
 
     json_file_no_path = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -100,7 +100,7 @@ class TestJsonConfig(unittest.TestCase):
 
     json_file_incorrect_names = '''{
       "config": {
-        "hostname": "mgarewal",
+        "hostname": "hgreenland",
         "endpoint": "data.logentries.com",
         "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
         "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
@@ -127,6 +127,121 @@ class TestJsonConfig(unittest.TestCase):
         ]
       }
     }'''
+
+    windows_json_file = '''{
+      "config": {
+        "hostname": "hgreenland",
+        "endpoint": "data.logentries.com",
+        "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
+        "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
+        "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
+        "metrics": {
+          "system-stat-token": "627d011e-0d97-11e7-9b83-6c0b84a93740",
+          "system-stat-enabled": "true",
+          "metrics-interval": "60s",
+          "metrics-cpu": "system",
+          "metrics-vcpu": "core",
+          "metrics-mem": "system",
+          "metrics-swap": "system",
+          "metrics-net": "sum eth0",
+          "metrics-disk": "sum sda4 sda5",
+          "metrics-space": "/"
+        },
+        "logs": [
+          {
+            "name": "GreenLog",
+            "token": "a7f9625e-0d98-11e7-9b83-6c0b84a93740",
+            "path": "/var/log/GreenLog",
+            "enabled": "true"
+          }
+        ],
+        "windows-eventlog":{
+        "enabled": true,
+        "token": "e684dc57-7240-4669-aa67-317e5493040a"
+       }
+      }
+    }'''
+
+    windows_json_file_incorrect_token = '''{
+      "config": {
+        "hostname": "hgreenland",
+        "endpoint": "data.logentries.com",
+        "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
+        "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
+        "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
+        "metrics": {
+          "system-stat-token": "627d011e-0d97-11e7-9b83-6c0b84a93740",
+          "system-stat-enabled": "true",
+          "metrics-interval": "60s",
+          "metrics-cpu": "system",
+          "metrics-vcpu": "core",
+          "metrics-mem": "system",
+          "metrics-swap": "system",
+          "metrics-net": "sum eth0",
+          "metrics-disk": "sum sda4 sda5",
+          "metrics-space": "/"
+        },
+        "logs": [
+          {
+            "name": "GreenLog",
+            "token": "a7f9625e-0d98-11e7-9b83-6c0b84a93740",
+            "path": "/var/log/GreenLog",
+            "enabled": "true"
+          }
+        ],
+        "windows-eventlog":{
+        "enabled": true,
+        "token": "incorrect_token"
+       }
+      }
+    }'''
+
+    # test _load_windows_configured_logs_json() with the correct parameters given.
+    @mock.patch('logging.log')
+    def test_load_windows_configured_json(self, mock_logger):
+        # Read in json config file
+        d_conf = json.loads(self.windows_json_file)
+        d_configFile = d_conf['config']
+        CONFIG = Config()
+
+        expected_dict = {'enabled' : True, 'token' : 'e684dc57-7240-4669-aa67-317e5493040a'}
+
+        CONFIG._load_windows_configured_json(d_configFile, mock_logger)
+        result_dict = CONFIG.windows_eventlogs
+
+        self.assertDictEqual(result_dict, expected_dict, msg=None)
+
+    # test load_windows_configured_logs_json() with an incorrect token given.
+    @mock.patch('logging.log')
+    def test_load_windows_configured_json_token(self, mock_logger):
+        name = "windows-eventlog"
+        token = None
+        CONFIG = Config()
+
+        # Read in json config file
+        d_conf = json.loads(self.windows_json_file_incorrect_token)
+        d_configFile = d_conf['config']
+
+        CONFIG._load_windows_configured_json(d_configFile, mock_logger)
+
+        # result matches error message
+        mock_logger.warn.assert_called_with("Invalid log token `%s' in application `%s'.",
+                        token, name)
+
+    # test load_windows_configured_logs_json() with no windows-eventlog section.
+    @mock.patch('logging.log')
+    def test_load_windows_configured_json_empty(self, mock_logger):
+        # Read in json config file
+        d_conf = json.loads(self.json_file)
+        d_configFile = d_conf['config']
+        CONFIG = Config()
+
+        expected_dict = {'enabled' : False, 'token' : None}
+
+        CONFIG._load_windows_configured_json(d_configFile, mock_logger)
+        result_dict = CONFIG.windows_eventlogs
+
+        self.assertDictEqual(result_dict, expected_dict, msg=None)
 
 
     # test the metrics.load_json() method correctly pulls the right parameters and associated values.
