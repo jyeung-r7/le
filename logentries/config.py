@@ -379,7 +379,7 @@ class Config(object):
             })
 
             # Read configuration files from default directories
-            config_files = [self.config_dir_name + LE_CONFIG]
+            config_files = [self.config_filename]
             if load_include_dirs:
                 config_files.extend(self._list_configs(self.config_d))
 
@@ -434,6 +434,7 @@ class Config(object):
     # method to determine type of config file in root directory /etc/le or local directory ~/.le and return the appropriate load method
     def load(self, load_include_dirs=True):
         if self.use_json:
+            self.set_config_dir(self.config_dir_name)
             self.load_json()
         else:
             self.load_ini()
