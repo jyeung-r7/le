@@ -204,10 +204,10 @@ class TestJsonConfig(unittest.TestCase):
         d_configFile = d_conf['config']
         CONFIG = Config()
 
-        expected_dict = {'enabled' : 'true', 'token' : 'e684dc57-7240-4669-aa67-317e5493040a'}
+        expected_dict = {'enabled' : True, 'token' : 'e684dc57-7240-4669-aa67-317e5493040a'}
 
         CONFIG._load_windows_configured_json(d_configFile, mock_logger)
-        result_dict = CONFIG.windows_eventlog
+        result_dict = CONFIG.windows_eventlogs
 
         self.assertDictEqual(result_dict, expected_dict, msg=None)
 
@@ -232,14 +232,14 @@ class TestJsonConfig(unittest.TestCase):
     @mock.patch('logging.log')
     def test_load_windows_configured_json_empty(self, mock_logger):
         # Read in json config file
-        d_conf = json.loads(self.windows_json_file)
+        d_conf = json.loads(self.json_file)
         d_configFile = d_conf['config']
         CONFIG = Config()
 
-        expected_dict = {'enabled' : 'false', 'token' : None}
+        expected_dict = {'enabled' : False, 'token' : None}
 
         CONFIG._load_windows_configured_json(d_configFile, mock_logger)
-        result_dict = CONFIG.windows_eventlog
+        result_dict = CONFIG.windows_eventlogs
 
         self.assertDictEqual(result_dict, expected_dict, msg=None)
 

@@ -754,7 +754,7 @@ class Config(object):
             Loads configured windows parameters from the configuration file.
             These parameters contain the token and settings for following windows event logs.
         """
-        self.windows_eventlogs = {WINDOWS_ENABLED: 'false', WINDOWS_TOKEN_PARAM: None}
+        self.windows_eventlogs = {WINDOWS_ENABLED: False, WINDOWS_TOKEN_PARAM: None}
 
         # check if windows event log is specified in the configuration file
         if WINDOWS_LOGS in conf:
