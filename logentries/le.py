@@ -391,7 +391,7 @@ class Transport(object):
     """Encapsulates simple connection to a remote host. The connection may be
     encrypted. Each communication is started with the preamble."""
 
-    def __init__(self, endpoint, port, use_ssl, preamble, debug_transport_events, proxy):
+    def __init__(self, endpoint, port, use_ssl, preamble, debug_transport_events, proxy, use_ca_provided):
         # Copy transport configuration
         self.endpoint = endpoint
         self.port = port
@@ -400,7 +400,7 @@ class Transport(object):
         self._entries = queue.Queue(SEND_QUEUE_SIZE)
         self._socket = None # Socket with optional TLS encyption
         self._debug_transport_events = debug_transport_events
-
+        self._use_ca_provided = use_ca_provided
         self._shutdown = False # Shutdown flag - terminates the networking thread
 
         # proxy setup
@@ -425,7 +425,7 @@ class Transport(object):
                      proxy_type_str, self._proxy_url, self._proxy_port)
 
         # Get certificate name
-        if not CONFIG.use_ca_provided:
+        if not self._use_ca_provided:
             cert_name = utils.system_cert_file()
             if cert_name is None:
                 cert_name = utils.default_cert_file(CONFIG)
@@ -636,7 +636,7 @@ class DefaultTransport(object):
                 use_ssl = False
             self._transport = Transport(
                 endpoint, port, use_ssl, '', self._config.debug_transport_events,
-                (self._config.proxy_type, self._config.proxy_url, self._config.proxy_port))
+                (self._config.proxy_type, self._config.proxy_url, self._config.proxy_port, self._config.use_ca_provided))
         return self._transport
 
     def close(self):
@@ -1475,7 +1475,7 @@ class TerminationNotifier(object):
         self.terminate = True
 
 
-def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=None, logger=None, debug=True):
+def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=None, logger=None, debug=True, retry=300):
     """Monitor host activity and sends events collected to logentries infrastructure from a local configuration"""
     utils.no_more_args(args)
 
@@ -1494,7 +1494,14 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
     elif CONFIG.use_json:
         CONFIG.set_config_dir(CONFIG.config_dir_name)
 
-    CONFIG.load()
+    while not shutdown_evt.isSet():
+        try:
+            CONFIG.load()
+            break
+        except FileNotFoundError as fnfError:
+            logging.debug('Configuration file not found %s' % config_dir, fnfError)
+            time.sleep(retry)
+
 
     LOG.logger.info('Initializing configured log from %s' % CONFIG.config_filename)
     # Ensure all configured logs are created
