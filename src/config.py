@@ -1,20 +1,18 @@
 """Config Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
 # pylint: disable=too-many-instance-attributes, attribute-defined-outside-init
 
 import os
 import socket
 import stat
 import getopt
+from io import open #pylint: disable=redefined-builtin
 import configparser as ConfigParser
 
-import metrics
-import utils
-from log import log
-from configured_log import ConfiguredLog
-from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+from logentries import metrics as metrics
+from logentries import utils as utils
+from logentries.log import log
+from logentries.configured_log import ConfiguredLog
+from logentries.constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 
 
 DEFAULT_USER_KEY = NOT_SET
@@ -377,7 +375,7 @@ class Config(object):
         except (ConfigParser.NoSectionError,
                 ConfigParser.NoOptionError,
                 ConfigParser.MissingSectionHeaderError) as error:
-            raise FatalConfigurationError('%s' % error)
+            raise FatalConfigurationError(error)
         return True
 
     def save(self):  # pylint: disable=too-many-branches
@@ -388,7 +386,7 @@ class Config(object):
         try:
             conf = ConfigParser.SafeConfigParser()
             utils.create_conf_dir(self)
-            conf_file = open(self.config_filename, 'wb')
+            conf_file = open(self.config_filename, mode='w', encoding='utf-8')
             conf.add_section(MAIN_SECT)
             if self.user_key != NOT_SET:
                 conf.set(MAIN_SECT, USER_KEY_PARAM, self.user_key)
@@ -429,11 +427,7 @@ class Config(object):
 
             self.metrics.save(conf)
 
-            try:
-                conf.write(str.encode(conf_file))
-            except TypeError:
-                conf.write(conf_file)
-
+            conf.write(conf_file)
 
         except IOError as error:
             utils.die("Error: IO error when writing to config file: %s" % error)
@@ -697,12 +691,6 @@ class Config(object):
             utils.die('Error: Agent key does not look right.')
         self.agent_key = value
 
-    def _set_api_key(self, value):
-        """Set the api key to the value provided"""
-        if not self._check_key(value):
-            utils.die('Error: API key does not look right.')
-        self.api_key = value
-
     def _set_datahub_settings(self, value, should_die=True):
         """Set datahub settings"""
         if not value and should_die:
@@ -723,3 +711,6 @@ class Config(object):
                 utils.die("Cannot parse %s as port. "
                           "Specify a valid --datahub address" % values[1])
         self.datahub = value
+
+
+config_object = Config()#pylint: disable=invalid-name

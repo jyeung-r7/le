@@ -1,21 +1,19 @@
 """Metrics Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
 
 #pylint: disable=redefined-outer-name, invalid-name
 #pylint: disable=wrong-import-order, wrong-import-position
+from __future__ import absolute_import
 
-import configparser as ConfigParser
 import re
 import sys
 import threading
 import time
 import traceback
 
-import formats
-from utils import report
-from __init__ import __version__
+import configparser as ConfigParser
+from logentries import formats
+from logentries.__init__ import __version__
+from logentries.utils import report
 
 # Try to import psutils
 try:

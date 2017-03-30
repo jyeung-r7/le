@@ -1,11 +1,10 @@
 """Logging Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
-import sys
-import logging
+from __future__ import absolute_import
 
-from utils import report, LOG_LE_AGENT, EXIT_ERR
+import logging
+import sys
+
+from logentries.utils import report, LOG_LE_AGENT, EXIT_ERR
 
 class Log(object):
     """Log object"""

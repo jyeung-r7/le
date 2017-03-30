@@ -1,21 +1,19 @@
 """Follower Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
-
 #pylint: disable=too-many-instance-attributes
-import sys
-import os
-import threading
+from __future__ import absolute_import
+
 import glob
+import os
+import sys
+import threading
 import time
+from io import open #pylint: disable=redefined-builtin
 
-
-from log import log
-from constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
+from logentries.constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
     FILE_END, FILE_BEGIN, MAX_BLOCK_SIZE, TAIL_RECHECK, \
     LINE_SEPARATOR, NAME_CHECK, FOLLOWER_JOIN_INTERVAL, \
     RETRY_GLOB_INTERVAL, MAX_FILES_FOLLOWED, FOLLOWMULTI_JOIN_INTERVAL
+from logentries.log import log
 
 
 class Follower(object):
@@ -28,6 +26,7 @@ class Follower(object):
                  name,
                  entry_filter,
                  entry_formatter,
+                 entry_identifier,
                  transport,
                  state,
                  config,
@@ -36,9 +35,11 @@ class Follower(object):
         self.name = name
         self.real_name = None
         self.entry_filter = entry_filter
+        self.entry_identifier = entry_identifier
         self.entry_formatter = entry_formatter
         self.transport = transport
         self.config = config
+
         # FollowMultilog usage
         self._disable_glob = disable_glob
 
@@ -124,7 +125,7 @@ class Follower(object):
                 self.real_name = candidate
                 try:
                     self._close_log()
-                    self._file = open(self.real_name)
+                    self._file = open(self.real_name, mode='r', encoding='utf-8')
                     new_position = 0
                     if first_try:
                         if position == -1:
@@ -191,7 +192,7 @@ class Follower(object):
             buff_lines.append(self._read_file_rest[:MAX_BLOCK_SIZE])
             self._read_file_rest = self._read_file_rest[MAX_BLOCK_SIZE:]
 
-        return [line for line in buff_lines[:-1]]
+        return buff_lines
 
 
     def _set_file_position(self, offset, start=FILE_BEGIN):
@@ -209,6 +210,8 @@ class Follower(object):
         """Accepts lines received and merges them to multiline events.
         """
         # Fast track
+        if not self.entry_identifier:
+            return lines
         if not lines:
             if self._entry_rest:
                 events = [LINE_SEPARATOR.join(self._entry_rest)]
@@ -221,10 +224,13 @@ class Follower(object):
         new_entry = self._entry_rest
         self._entry_rest = []
         for line in lines:
-            if new_entry:
-                new_lines.append(LINE_SEPARATOR.join(new_entry))
-                new_entry = []
-            new_entry.append(line)
+            if self.entry_identifier.search(line):
+                if new_entry:
+                    new_lines.append(LINE_SEPARATOR.join(new_entry))
+                    new_entry = []
+                new_entry.append(line)
+            else:
+                new_entry.append(line)
         self._entry_rest = new_entry
         return new_lines
 
@@ -283,9 +289,10 @@ class Follower(object):
             line = self.entry_filter(line)
             if not line:
                 continue
-            if self.config.debug_events:
-                sys.stderr.write(line)
             line = self.entry_formatter(line)
+            if self.config.debug_events:
+                sys.stderr.write("\n")
+                sys.stderr.write(line)
             if not line:
                 continue
             self.transport.send(line)
@@ -326,7 +333,7 @@ class Follower(object):
 
 class MultilogFollower(object):
     """
-    The FollowMultilog is responsible for handling those logs that were set-up using the
+    The MultilogFollower is responsible for handling those logs that were set-up using the
     '--multilog' option and that may have a wildcard in the pathname.
     In which case multiple local (log) files will be followed, but with all the new events
     from all the files forwarded to the same single log in the logentries infrastructure.
@@ -335,6 +342,7 @@ class MultilogFollower(object):
                  name,
                  entry_filter,
                  entry_formatter,
+                 entry_identifier,
                  transport,
                  states,
                  config,
@@ -344,6 +352,7 @@ class MultilogFollower(object):
         self.flush = True
         self.entry_filter = entry_filter
         self.entry_formatter = entry_formatter
+        self.entry_identifier = entry_identifier
         self.transport = transport
         self.config = config
 
@@ -375,8 +384,10 @@ class MultilogFollower(object):
                 follower = Follower(filename,
                                     self.entry_filter,
                                     self.entry_formatter,
+                                    self.entry_identifier,
                                     self.transport,
                                     states.get(filename),
+                                    self.config,
                                     True)
                 self._followers.append(follower)
                 if self.config.debug_multilog:

@@ -3,7 +3,10 @@
 # vim: set ts=4 sw=4 et:
 
 #pylint: disable=wrong-import-order, wrong-import-position
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from future.standard_library import install_aliases
+
 install_aliases()
 from urllib.parse import urlencode, quote #pylint: disable=import-error
 
@@ -34,18 +37,17 @@ try:
     import hashlib #pylint: disable=unused-import
 except ImportError:
     pass
-
-import formats
-import socks
-import utils
-import metrics
-from config import Config, FatalConfigurationError
-from followers import Follower, MultilogFollower
-from log import log as log_object
-from domain import Domain
-from backports import CertificateError, match_hostname
-from datetime_utils import parse_timestamp_range
-from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+from logentries import formats as formats
+from logentries import socks as socks
+from logentries import utils as utils
+from logentries import metrics as metrics
+from logentries.config import Config, FatalConfigurationError
+from logentries.followers import Follower, MultilogFollower
+from logentries.log import log as log_object
+from logentries.domain import Domain
+from logentries.backports import CertificateError, match_hostname
+from logentries.datetime_utils import parse_timestamp_range
+from logentries.constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 
 # Explicitely set umask to allow user rw + group read
@@ -551,9 +553,9 @@ class Transport(object):
         # Keep sending data until successful
         while not self._shutdown:
             try:
-                self._socket.send(entry.encode('utf8'))
+                self._socket.send((entry).encode('utf-8'))
                 if self._debug_transport_events:
-                    sys.stderr.write(entry.encode('utf8'))
+                    sys.stderr.write(entry)
                 break
             except socket.error:
                 self._open_connection()
@@ -569,7 +571,7 @@ class Transport(object):
             try:
                 self._entries.put_nowait(entry)
                 break
-            except Queue.QueueFull: #pylint: disable=no-member
+            except queue.Full:
                 try:
                     self._entries.get_nowait()
                 except queue.Empty:
@@ -589,7 +591,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except Queue.QueueEmpty: #pylint: disable=no-member
+                except queue.Empty:
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -689,56 +691,6 @@ def get_response(operation, addr, data=None, headers=None,
     return None, None
 
 
-def api_v2_request(method, url, request, required=False, silent=False, die_on_error=True):
-    """
-    Processes a request on the logentries domain.
-    """
-    # Obtain response
-    request_encoded = json.dumps(request)
-    response, conn = get_response(
-        method, '/v2/accounts/%s/%s'%(config.user_key, url), request_encoded,
-        silent=silent, die_on_error=die_on_error, domain=Domain.API,
-        headers={'Content-Type': 'application/x-www-form-urlencoded'})
-
-    # Check the response
-    if not response:
-        if required:
-            utils.error("Cannot process LE request, no response")
-        if conn:
-            conn.close()
-        return None
-
-    xresponse = response.read()
-    conn.close()
-
-    LOG.debug('Domain response: "%s"', xresponse)
-    try:
-        if xresponse:
-            d_response = utils.json_loads(xresponse)
-        else:
-            d_response = {}
-    except ValueError:
-        error = 'Error: Invalid response, parse error.'
-        if die_on_error:
-            utils.die(error)
-        else:
-            LOG.info(error)
-            d_response = None
-
-    if response.status not in [http.client.OK, http.client.CREATED, http.client.NO_CONTENT]:
-        reason = ''
-        if 'reason' in d_response:
-            reason = d_response['reason']
-        if required:
-            if reason:
-                error("%s" % reason)
-            else:
-                error("Cannot process LE request: (%s)", response.status)
-        return None
-
-    return d_response
-
-
 def pull_request(what, params):
     """
     Processes a pull request on the logentries domain.
@@ -792,10 +744,10 @@ def request(request_, required=False, check_status=False, rtype='GET', retry=Fal
 
     response = response.read()
     conn.close()
-    LOG.debug('List response: %s', response)
+    LOG.debug('List response: %s', response.decode('UTF-8'))
     try:
-        d_response = json.loads(response)
-    except ValueError:
+        d_response = json.loads(response.decode('UTF-8'))
+    except (ValueError, TypeError):
         utils.error('Invalid response (%s)' % response)
 
     if check_status and d_response['response'] != 'ok':
@@ -834,6 +786,8 @@ def _get_log(log_id=None):
             return response.json()
         else:
             LOG.error("Could not retrieve log - %d", response.status_code)
+            log_id_ = log_id if log_id else ""
+            LOG.error("Error %d.\nCould not retrieve log %s", response.status_code, log_id_)
             return None
     except requests.exceptions.RequestException as error:
         utils.die(error)
@@ -880,7 +834,7 @@ def create_log(logset_id, name, filename, do_follow=True, source=None):
         utils.die(error)
 
 
-def create_logset(name, filename="", follow=""):
+def create_logset(hostname):
     """
     Creates a new host on server with given parameters.
     """
@@ -896,15 +850,13 @@ def create_logset(name, filename="", follow=""):
         version = platform_info[1]
 
     user_data = {
-        'le_agent_filename': filename,
-        'le_agent_follow': follow,
         'le_agent_distribution': distribution,
         'le_agent_distver': version
     }
 
     request_params = {
         'logset': {
-            'name': name,
+            'name': hostname,
             'user_data': user_data
         }
     }
@@ -914,7 +866,8 @@ def create_logset(name, filename="", follow=""):
         if response.status_code is 201:
             return response.json()
         else:
-            utils.die("Error - %d. Could not create logset." % response.status_code)
+            utils.die("Error - %d. Could not create logset. %s"
+                      % (response.status_code, response.reason))
     except requests.exceptions.RequestException as error:
         utils.die(error)
 
@@ -956,9 +909,9 @@ def get_logset_by_name(logset_name):
     logsets = get_logset()
     if logsets is not None:
         for item in logsets['logsets']:
-            if item['name'] is logset_name:
+            if item['name'] == logset_name:
                 return item
-    return False
+    return None
 
 
 def get_or_create_logset(logset_name):
@@ -968,8 +921,7 @@ def get_or_create_logset(logset_name):
 
     logset = get_logset_by_name(logset_name)
 
-    if not logset:
-
+    if logset is not None:
         logset = create_logset(logset_name)
 
     return logset['logset']['id']
@@ -1027,7 +979,6 @@ def cmd_whoami(args):
     logs = _get_loglist_with_paths()
     if logset is not None:
         LOG.info("name %s", utils.safe_get(logset, 'logset', 'name'))
-        LOG.info("hostname %s", CONFIG.hostname)
         LOG.info("key %s", utils.safe_get(logset, 'logset', 'id'))
         LOG.info("distribution %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distname'))
         LOG.info("distver %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distver'))
@@ -1069,7 +1020,7 @@ def cmd_register(args):
 
     system_info = system_detect(True)
 
-    logset = create_logset(CONFIG.name)
+    logset = create_logset(CONFIG.hostname)
     CONFIG.agent_key = logset['logset']['id']
     CONFIG.save()
 
@@ -1135,11 +1086,14 @@ def get_filters(available_filters, filter_filenames, log_name, log_id, log_filen
     return entry_filter
 
 
-def get_formatters(default_formatter, available_formatters,
+def get_formatters(available_formatters,
                    log_name, log_id, log_token):
     """Get formatters by log name, ID or token"""
+    default_formatter = formats.get_formatter(CONFIG.formatter,
+                                              CONFIG.hostname, log_name, log_token)
+
     _debug_formatters(
-        " Looking for formatters by log_name=%s id=%s token=%s", log_name, log_id, log_token)
+        " Looking for formatters by log_name=%s id=%s token=%s \n", log_name, log_id, log_token)
 
     entry_formatter = None
     if not entry_formatter and log_name:
@@ -1217,7 +1171,14 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    return utils.safe_get(log_, 'log', 'token_seed')
+    try:
+        tokens = log_['log']['tokens']
+        if len(tokens) == 1:
+            return tokens[0]
+        else:
+            return None
+    except TypeError:
+        return None
 
 
 def construct_configured_log(configured_log):
@@ -1245,21 +1206,31 @@ def _get_all_logs_for_host():
         logsets = get_logset(CONFIG.agent_key)
         log_ids = []
 
-        for log_info in logsets['logset']['logs_info']:
-            log_ids.append(log_info['id'])
+        try:
+            for log_info in logsets['logset']['logs_info']:
+                log_ids.append(log_info['id'])
 
-        for log_id in log_ids:
-            log_ = _get_log(log_id)
-            if log_ is not None and 'user_data' in log_['log']:
-                user_data = log_['log']['user_data']
-                if 'le_agent_follow' in user_data and user_data['le_agent_follow'] == "true":
+            for log_id in log_ids:
+                log_ = _get_log(log_id)
+                le_agent_follow = utils.safe_get(log_, 'log', 'user_data', 'le_agent_follow')
+                if le_agent_follow == "true":
                     logs.append(log_)
+        except TypeError:
+            utils.die("Could not retrieve server side config")
 
     for configured_log in CONFIG.configured_logs:
         logs.append(construct_configured_log(configured_log))
 
     return logs
 
+def _init_entry_identifier(entry_identifier):
+    """Compiles entry separator defined by regular expression. If the
+    compilation is not successfull, it return None.
+    """
+    try:
+        return re.compile(entry_identifier)
+    except re.error:
+        return None
 
 def start_followers(default_transport, states):
     """ Loads logs from the server (or configuration) and initializes followers.
@@ -1280,7 +1251,7 @@ def start_followers(default_transport, states):
         log_name = log_['log']['name']
         log_id = log_['log']['id']
         log_token = extract_token(log_)
-        #TODO check for no log token
+        log_token = "" if log_token is None else log_token
 
         if log_filename.startswith(PREFIX_MULTILOG_FILENAME):
             log_filename = log_filename.replace(PREFIX_MULTILOG_FILENAME, '', 1).lstrip()
@@ -1293,19 +1264,22 @@ def start_followers(default_transport, states):
             continue
 
         entry_filter = get_filters(filter_config[0], filter_config[1],
-                                   log_name, log_id, log_filename,
-                                   log_token)
+                                   log_name, log_id, log_filename, log_token)
         if not entry_filter:
             continue
 
-
-        entry_formatter = formats.get_formatter(CONFIG.formatter,
-                                                CONFIG.hostname, log_name, log_token)
-        entry_formatter = get_formatters(entry_formatter, available_formatters,
+        entry_formatter = get_formatters(available_formatters,
                                          log_name, log_id, log_token)
 
-        LOG.info("Following %s", log_filename)
+        s_entry_identifier = CONFIG.entry_identifier
+        if s_entry_identifier:
+            entry_identifier = _init_entry_identifier(s_entry_identifier)
+            if not entry_identifier:
+                LOG.error("Invalid entry separator `%s' ignored", s_entry_identifier)
+        else:
+            entry_identifier = None
 
+        LOG.info("Following %s", log_filename)
 
         if log_token is not None or CONFIG.datahub is not None:
             transport = default_transport.get()
@@ -1343,11 +1317,12 @@ def start_followers(default_transport, states):
         # Instantiate the follow_multilog for 'multilog' filename,
         # otherwise the individual follower
         if multilog_filename:
-            follow_multilog = MultilogFollower(log_filename, entry_filter, entry_formatter,
+            follow_multilog = MultilogFollower(log_filename, entry_filter,
+                                               entry_formatter, entry_identifier,
                                                transport, states, CONFIG)
             multilog_followers.append(follow_multilog)
         else:
-            follower = Follower(log_filename, entry_filter, entry_formatter,
+            follower = Follower(log_filename, entry_filter, entry_formatter, entry_identifier,
                                 transport, states.get(log_filename), CONFIG)
             followers.append(follower)
 
@@ -1533,6 +1508,7 @@ def cmd_monitor(args):
         pass
 
     sys.stderr.write("\nShutting down")
+    sys.stderr.write("\n")
     # Stop metrics
     if smetrics:
         smetrics.cancel()
@@ -1566,9 +1542,9 @@ def cmd_follow(args):
         utils.error("Specify the file name of the log to follow.")
     if len(args) > 1:
         utils.error("Too many arguments.\n"
-                  "A common mistake is to use wildcards in path that is being "
-                  "expanded by shell. Enclose the path in single quotes to avoid "
-                  "expansion.")
+                    "A common mistake is to use wildcards in path that is being "
+                    "expanded by shell. Enclose the path in single quotes to avoid "
+                    "expansion.")
 
     CONFIG.load()
     CONFIG.agent_key_required()
@@ -1600,9 +1576,9 @@ def cmd_follow_multilog(args):
         utils.error("Specify the file name of the log to follow.")
     if len(args) > 1:
         utils.error("Too many arguments.\n"
-                  "A common mistake is to use wildcards in path that is being "
-                  "expanded by shell. Enclose the path in single quotes to avoid "
-                  "expansion.")
+                    "A common mistake is to use wildcards in path that is being "
+                    "expanded by shell. Enclose the path in single quotes to avoid "
+                    "expansion.")
     CONFIG.load()
     CONFIG.agent_key_required()
     arg = args[0]
@@ -1646,7 +1622,7 @@ def _user_prompt(path):
         file_count = 0
         for filename in file_candidates:
             if file_count < MAX_FILES_FOLLOWED:
-                print ('\t{0}'.format(filename))
+                print('\t{0}'.format(filename))
                 file_count = file_count+1
     while True:
         print("\nUse new path to follow files [y] or quit [n]?")
@@ -1712,6 +1688,13 @@ def _list_object(request_, hostnames=False):
     """
     Lists object request given.
     """
+    if utils.safe_get(request_, 'log') is not None:
+        print(json.dumps(request_['log']))
+    elif utils.safe_get(request_, 'logs') is not None:
+        print(json.dumps(request_['logs']))
+    elif utils.safe_get(request_, 'logset') is not None:
+        print(json.dumps(request_['logset']))
+
     obj = request_['object']
     index_name = 'name'
     item_name = ''
@@ -1751,7 +1734,8 @@ def _list_object(request_, hostnames=False):
         if CONFIG.uuid:
             print(item['key'])
         print("%s" % (item[index_name]))
-        utils.print_total(ilist, item_name)
+
+    utils.print_total(ilist, item_name)
 
 
 def _is_log_fs(addr):
@@ -1763,6 +1747,35 @@ def _is_log_fs(addr):
         if re.match(log_addr, addr):
             return True
     return False
+
+def _list_logset(args):
+    resources = str(args[0]).split("/")
+
+    if len(resources) is 1:
+        logset_names = []
+        for logset_ in get_logset()['logsets']:
+            logset_names.append(utils.safe_get(logset_, 'name'))
+        print("\n".join(logset_names))
+        utils.print_total(logset_names, 'host')
+    elif len(resources) is 2:
+        logset = get_logset_by_name(resources[1])
+        print("name = %s" % utils.safe_get(logset, 'user_data', 'le_agent_filename'))
+        print("hostname = %s" % utils.safe_get(logset, 'name'))
+        print("key = %s" % utils.safe_get(logset, 'id'))
+        print("distribution = %s" % utils.safe_get(logset, 'user_data', 'le_agent_distribution'))
+        print("distver = %s" % utils.safe_get(logset, 'user_data', 'le_agent_distver'))
+    elif len(resources) is 3:
+        logset = get_logset_by_name(resources[1])
+        logs = utils.safe_get(logset, 'logs_info')
+
+        if logs is None:
+            utils.report("no Logs")
+            return
+        for log_ in logs:
+            print(utils.safe_get(log_, 'name'))
+        utils.print_total(logs, 'log')
+    else:
+        utils.die('Unknown object type "%s". Agent too old?' % object)
 
 
 def cmd_ls_ips():
@@ -1779,80 +1792,16 @@ def cmd_ls_ips():
     print(' '.join(ips))
 
 
-def cmd_ls_structures():
-    """
-    List user defined structures.
-    """
-    CONFIG.load()
-    CONFIG.user_key_required(True)
-
-    response = api_v2_request('GET', 'structures', {}, True)
-    structures = response['structures']
-
-    for structure in sorted(structures, key=lambda x: x['name']):
-        if CONFIG.uuid:
-            print utils.c_id(structure['id'])
-        print structure['name']
-
-    if len(structures) == 0:
-        print >> sys.stderr, 'No structures defined'
-    elif len(structures) == 1:
-        print >> sys.stderr, '1 structure'
-    else:
-        print >> sys.stderr, '%s structures' % len(structures)
-
-
-def cmd_ls_patterns(structure_name):
-    """
-    Lists patterns associated with the structure given.
-    """
-    if not structure_name:
-        utils.error('Structure name not specified')
-
-    CONFIG.load()
-    CONFIG.user_key_required(True)
-
-    response = api_v2_request('GET', 'structures', {}, True)
-    structures = response['structures']
-
-    # Find structure
-    matches = [s['id'] for s in structures if structure_name.lower() == s['id'].lower() or structure_name == s['name']]
-    if len(matches) == 0:
-        utils.error('Structure `%s\' does not exist', structure_name)
-    if len(matches) > 1:
-        utils.error('Multiple matches for `%s\'', structure_name)
-    structure_id = matches[0]
-
-    response = api_v2_request('GET', 'structures/%s/patterns'%structure_id, {}, True)
-
-    patterns = response['patterns']
-    for pattern in sorted(patterns, cmp=utils.cmp_patterns):
-        if CONFIG.uuid:
-            print utils.c_id(pattern['id']),
-        print '%2d %s' % (pattern['priority'], pattern['pattern'])
-    if len(patterns) == 0:
-        print >> sys.stderr, 'No patterns in structure `%s\'' % structure_name
-    elif len(patterns) == 1:
-        print >> sys.stderr, '1 pattern'
-    else:
-        print >> sys.stderr, '%s patterns' % len(patterns)
-
-
 def cmd_ls(args):
     """
     General list command
     """
+    CONFIG.load()
     if len(args) == 1 and args[0] == 'ips':
         cmd_ls_ips()
         return
-    if len(args) == 1 and args[0] == 'structures':
-        cmd_ls_structures()
-        return
-    if len(args) >= 1 and args[0].startswith('structures/'):
-        if len(args) == 1:
-            cmd_ls_patterns(args[0][len('structures/'):])
-        else:
-            utils.die('Error: Too many arguments.')
+    if len(args) == 1 and "host" in args[0]:
+        _list_logset(args)
         return
     if len(args) == 0:
         args = ['/']
@@ -1870,178 +1819,11 @@ def cmd_ls(args):
                  hostnames=addr.startswith('hostnames'))
 
 
-def cmd_add_structure(args):
-    """
-    Add a new structure command.
-    Args:
-        args: structure name followed by (optionally) pattern and priority
-    """
-    if not args:
-        utils.error('No structure name specified')
-    structure_name = args[0].strip()
-    if not structure_name:
-        utils.error('Empty structure name')
-
-    pattern = ''
-    priority = -1
-
-    # Get and check the pattern
-    if len(args) > 1:
-        pattern = args[1]
-        if not pattern:
-            utils.error('Pattern in empty')
-
-    if len(args) > 2:
-        try:
-            priority = int(args[2])
-            if priority < 0:
-                utils.error('Priority must be positive')
-            if priority > MAX_PATTERN_PRIORITY:
-                utils.error('Priority `%s\'is above the limit (%s)', args[2], MAX_PATTERN_PRIORITY)
-        except ValueError:
-            utils.error('Invalid priority `%s\', must be a positive integer', args[2])
-
-    if len(args) > 3:
-        utils.error('Too many arguments')
-
-    CONFIG.load()
-    CONFIG.user_key_required(True)
-
-    # Get all structures
-    response = api_v2_request('GET', 'structures', {}, True)
-    structures = response['structures']
-
-    # Find the structure
-    matches = [s['id'] for s in structures if structure_name.lower() == s['id'].lower() or structure_name == s['name']]
-    if len(matches) == 0:
-        # Add the structure
-        response = api_v2_request('POST', 'structures', {
-            'name': structure_name,
-            'shortcut': structure_name,
-            'description': '',
-            'aux': {},
-            }, True)
-        print >> sys.stderr, 'Added structure `%s\'' % structure_name
-        structure_id = response['structure']['id']
-    else:
-        structure_id = matches[0]
-        if not pattern:
-            print >> sys.stderr, 'Structure `%s\' already exists' % structure_name
-
-    # Add pattern (if specified)
-    # TODO - check that the pattern does not exist already
-    if pattern:
-        response = api_v2_request('POST', 'structures/%s/patterns'%structure_id, {
-            'priority': priority,
-            'pattern': pattern,
-            }, True)
-        print >> sys.stderr, 'Added pattern `%s\'' % pattern
-
-
-def cmd_add(args):
-    """
-    General add command.
-    """
-    if len(args) >= 1 and args[0] == 'structure':
-        cmd_add_structure(args[1:])
-    elif len(args) >= 1 and args[0].startswith('structures/'):
-        cmd_add_structure([args[0][len('structures/'):]] + args[1:])
-    elif len(args) == 0:
-        utils.error('Specify what to add, i.e. structure')
-    else:
-        utils.error('Unknown item to add: `%s\'', args[0])
-
-
-def cmd_rm_pattern(patterns, structure_name, structure_id):
-    if not patterns:
-        utils.error('No pattern specified (append pattern ID or beginning of the pattern or .) to remove.')
-    if len(patterns) > 1:
-        utils.error('Too many arguments, only one pattern allowed')
-    pattern = patterns[0]
-
-    rm_all = pattern in ['*', '.']
-
-    # Load all patterns
-    response = api_v2_request('GET', 'structures/%s/patterns'%structure_id, {}, True)
-    patterns = response['patterns']
-
-    # Go though patterns one by one, identify pattern IDs
-    # Use a different call for pattern=*
-    matches = [[p['id'], p['pattern']] for p in patterns \
-            if rm_all or p['id'] == pattern or p['pattern'].startswith(pattern)]
-    if not matches:
-        if rm_all:
-            print >> sys.stderr, 'No pattern to be removed; structure is empty'
-        else:
-            utils.error('No pattern matching `%s\' found', pattern)
-    if len(matches) > 1 and not rm_all:
-        utils.error('Pattern `%s\' is not specific enough; multiple matches', pattern)
-
-    # Do the physical deletion
-    for pattern_id, pattern_p in matches:
-        response = api_v2_request('DELETE', 'structures/%s/patterns/%s'%(structure_id, pattern_id), {}, True)
-        print >> sys.stderr, 'Removed pattern `%s\'' % pattern_p
-
-
-def cmd_rm_structure(args):
-    """ Remove the structure (or pattern) command.
-    Arguments contain command line (including 'structure' at the beginning)
-    """
-    subject = args[0]
-    structure_name = ''
-    if subject == 'structures':
-        # We don't support removing structures
-        utils.error('Invalid command. Use `rm structure name\' or `rm structures/name\'')
-    if subject == 'structure':
-        if len(args) == 1:
-            utils.error('No structure name specified (append structure name)')
-        if len(args) > 2:
-            utils.error('Too many structure names specified (specify only one name)')
-        structure_name = args[1]
-        patterns = args[2:]
-    elif subject.startswith('structures/'):
-        structure_name = subject[len('structures/'):]
-        patterns = args[1:]
-
-    if not structure_name:
-        utils.error('No structure name specified (append structure name)')
-
-    # Note args contain structure name or ID, and an optional pattern
-
-    CONFIG.load()
-    CONFIG.user_key_required(True)
-
-    # Load all structures
-    response = api_v2_request('GET', 'structures', {}, True)
-    structures = response['structures']
-
-    # Find structure IDs
-    structure = [[structure_name, s['id']] for s in structures if structure_name.lower() == s['id'].lower() or structure_name == s['name']]
-    if not structure:
-        utils.error('Structure `%s\' does not exist', structure_name)
-    if len(structure) > 1:
-        utils.error('Multiple matches for `%s\'', structure_name)
-    structure_id = structure[0][1]
-
-    # Now we know structure exists and we know its ID
-
-    if not patterns: # Removing structure
-        response = api_v2_request('DELETE', 'structures/%s'%structure_id, {}, True)
-        print >> sys.stderr, 'Removed structure `%s\'' % structure_name
-    else: # Removing patterns
-        cmd_rm_pattern(patterns, structure_name, structure_id)
-
-
 def cmd_rm(args):
     """
     General remove command
     """
-    # In case of removing structures and patterns
-    if args and (args[0] in ['structure', 'structures'] or args[0].startswith('structures/')):
-        cmd_rm_structure(args)
-        return
-
-    if not args:
+    if len(args) == 0:
         args = ['/']
     CONFIG.load()
     CONFIG.user_key_required(True)
@@ -2054,7 +1836,8 @@ def cmd_rm(args):
         if response.status_code is 204:
             LOG.info("Successfully deleted \n")
         else:
-            LOG.error('Deleting resource failed, status code: %d', response.status_code)
+            LOG.error('Deleting resource failed, status code: %d %s',
+                      response.status_code, response.reason)
     except requests.exceptions.RequestException as error:
         utils.die(error)
 
@@ -2136,12 +1919,9 @@ def main_root():
         'followed': cmd_followed,
         'clean': cmd_clean,
         'whoami': cmd_whoami,
-        'add': cmd_add,
         # Filesystem operations
         'ls': cmd_ls,
-        'list': cmd_ls,
         'rm': cmd_rm,
-        'remove': cmd_rm,
         'pull': cmd_pull,
     }
     for cmd, func in commands.items():
@@ -2158,7 +1938,7 @@ def main():
     try:
         main_root()
     except FatalConfigurationError as error:
-        LOG.error("Fatal: %s", error.message)
+        LOG.error("Fatal: %s", error)
     except KeyboardInterrupt:
         utils.die("\nTerminated", EXIT_TERMINATED)
 
