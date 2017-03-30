@@ -11,6 +11,8 @@ Scenario 'We are able to save state and retrieve it back'
 Testcase 'Init'
 
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY --hostname myhost
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
+
 #e Initialized
 echo "state-file = $TMP/state-file" >>"$CONFIG"
 echo 'pull-server-side-config = False' >>"$CONFIG"
@@ -33,13 +35,13 @@ echo 'Message 3' >> example.log
 sync
 sleep 2
 
+#e
 #e Message 2
 #e Message 3
 
 kill $LE_PID
 wait $LE_PID
 
-#e
 #e Shutting down
 
 Testcase 'Monitoring - second phrase'
@@ -53,11 +55,11 @@ $LE --debug-events monitor &
 #e Following $TMP/example.log
 LE_PID=$!
 
+#e
 #e Message 4 (not to be lost)
 #e Message 5 (not to be lost)
 
 sleep 2
 
-#e
 #e Shutting down
 

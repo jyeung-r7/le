@@ -1,7 +1,4 @@
 """Utils Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
 
 #pylint: disable=invalid-name
 #pylint: disable=wrong-import-order, wrong-import-position
@@ -22,8 +19,8 @@ import json
 import getpass
 import http.client
 
-from logentries.__init__ import __version__
 from logentries.domain import Domain
+from logentries.__init__ import __version__
 from logentries.constants import * #pylint: disable=unused-wildcard-import,wildcard-import
 from logentries.backports import match_hostname, CertificateError
 
@@ -38,7 +35,7 @@ try:
     import termcolor
     colored = termcolor.colored
 except ImportError:
-    def colored(text, color):
+    def colored(text, color): #pylint: disable=unused-argument
         return text
 
 def red(text):
@@ -56,8 +53,8 @@ __author__ = 'Logentries'
 __all__ = ["EXIT_OK", "EXIT_NO", "EXIT_HELP", "EXIT_ERR", "EXIT_TERMINATED",
            "ServerHTTPSConnection", "LOG_LE_AGENT", "create_conf_dir",
            "default_cert_file", "system_cert_file", "domain_connect",
-           "no_more_args", "find_hosts", "find_logs", "find_api_obj_by_key", "find_api_obj_by_name", "die",
-           "error", "cmp_patterns",
+           "no_more_args", "find_hosts", "find_logs", "find_api_obj_by_key",
+           "find_api_obj_by_name", "die", "error", "cmp_patterns",
            "rfile", 'TCP_TIMEOUT', "rm_pidfile", "uuid_parse", "report",
            "colored", "c_param", "c_id"]
 
@@ -147,9 +144,9 @@ class ServerHTTPSConnection(http.client.HTTPSConnection):
             self.sock = wrap_socket(sock)
             try:
                 match_hostname(self.sock.getpeercert(), self.host)
-            except CertificateError as error:
+            except CertificateError as cert_error:
                 die("Could not validate SSL certificate for %s: %s"
-                    % (self.host, error.message))
+                    % (self.host, cert_error.message))
 
 
 def default_cert_file_name(config):
@@ -166,12 +163,12 @@ def create_conf_dir(config):
     # Create logentries config
     try:
         os.makedirs(config.config_dir_name)
-    except OSError as error:
-        if error.errno != errno.EEXIST:
-            if error.errno == errno.EACCES:
+    except OSError as os_error:
+        if os_error.errno != errno.EEXIST:
+            if os_error.errno == errno.EACCES:
                 die("You don't have permission to create logentries config file. "
                     "Please run logentries agent as root.")
-            die('Error: %s' % error)
+            die('Error: %s' % os_error)
 
 
 def write_default_cert_file(config):
@@ -533,7 +530,7 @@ def print_total(elems, name):
     elif total == 1:
         report("1 " + name)
     else:
-        report("%d %ss \n" % (total, name))
+        report("%d %ss" % (total, name))
 
 
 def retrieve_account_key(config):
@@ -597,7 +594,7 @@ def safe_get(dct, *keys):
     return dct
 
 
-def cmp(a, b):
+def cmp(a, b): #pylint: disable=redefined-builtin
     """
     Built-in cmp method is removed in python3
     """
