@@ -636,7 +636,7 @@ class DefaultTransport(object):
                 use_ssl = False
             self._transport = Transport(
                 endpoint, port, use_ssl, '', self._config.debug_transport_events,
-                (self._config.proxy_type, self._config.proxy_url, self._config.proxy_port, self._config.use_ca_provided))
+                (self._config.proxy_type, self._config.proxy_url, self._config.proxy_port), self._config.use_ca_provided)
         return self._transport
 
     def close(self):
