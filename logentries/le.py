@@ -921,7 +921,7 @@ def get_logset_by_name(logset_name):
     if logsets is not None:
         for item in logsets['logsets']:
             if item['name'] == logset_name:
-                return item
+                return {'logset': item}
     return None
 
 
@@ -932,10 +932,11 @@ def get_or_create_logset(logset_name):
 
     logset = get_logset_by_name(logset_name)
 
+    # If logset does not exist, create the logset
     if logset is None:
         logset = create_logset(logset_name)
 
-    return logset['id']
+    return logset['logset']['id']
 
 
 def get_or_create_log(logset_id, log_name):
