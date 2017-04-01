@@ -637,11 +637,15 @@ class MetricsConfig(object):
     def load_json(self, conf):
         """Loads metrics configuration."""
         # Basic metrics
-        metricDict = conf.get(METRIC)
-        for item in self.DEFAULTS:
-                self.__dict__[item] = metricDict.get(METRIC_PREFIX + item)
-        self.token = metricDict.get(SYSTEM_STAT_PREFIX + TOKEN)
-        self.enabled = metricDict.get(SYSTEM_STAT_PREFIX + ENABLED)
+        metricsDict = conf.get(METRIC)
+        if metricsDict is None:
+            for item in self.DEFAULTS:
+                self.__dict__[item] = None
+        else:
+            for item in self.DEFAULTS:
+                    self.__dict__[item] = metricsDict.get(METRIC_PREFIX + item)
+            self.token = metricsDict.get(SYSTEM_STAT_PREFIX + TOKEN)
+            self.enabled = metricsDict.get(SYSTEM_STAT_PREFIX + ENABLED)
 
     def load_ini(self, conf):
         """Loads metrics configuration."""

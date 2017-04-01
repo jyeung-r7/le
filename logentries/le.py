@@ -1513,7 +1513,7 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
     default_transport = DefaultTransport(CONFIG)
     formatter = formats.FormatSyslog(CONFIG.hostname, 'le', CONFIG.metrics.token)
 
-    if CONFIG.metrics.enabled:
+    if CONFIG.metrics.enabled is True and CONFIG.metrics is not None:
         LOG.logger.info('Initializing metrics')
         s_metrics = metrics.Metrics(CONFIG.metrics, default_transport, formatter, CONFIG.debug_metrics)
         s_metrics.start()

@@ -196,6 +196,24 @@ class TestJsonConfig(unittest.TestCase):
       }
     }'''
 
+    json_file_without_metrics = '''{
+      "config": {
+        "hostname": "hgreenland",
+        "endpoint": "data.logentries.com",
+        "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
+        "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
+        "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
+        "logs": [
+          {
+            "name": "GreenLog",
+            "token": "a7f9625e-0d98-11e7-9b83-6c0b84a93740",
+            "path": "/var/log/GreenLog",
+            "enabled": "true"
+          }
+        ]
+      }
+    }'''
+
     # test _load_windows_configured_logs_json() with the correct parameters given.
     @mock.patch('logging.log')
     def test_load_windows_configured_json(self, mock_logger):
@@ -262,11 +280,11 @@ class TestJsonConfig(unittest.TestCase):
     # test the metrics.load_json() method when incorrect parameter names are given.
     def test_should_not_load_metrics_json(self):
         # Read in json config file
-        d_conf = json.loads(self.json_file_incorrect_names)
+        d_conf = json.loads(self.json_file_without_metrics)
         d_configFile = d_conf['config']
         self.metrics = metrics.MetricsConfig()
         expected_dict = {'processes': [], 'net': None, 'space' : None, 'disk': None, 'interval': None, 'swap': None,
-                         'vcpu': None, 'cpu': None, 'mem': None, 'token': None, 'enabled': None}
+                         'vcpu': None, 'cpu': None, 'mem': None, 'token': None, 'enabled': False}
 
         self.metrics.load_json(d_configFile)
         result_dict = self.metrics.__dict__
