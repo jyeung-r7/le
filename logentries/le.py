@@ -1513,9 +1513,10 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
     default_transport = DefaultTransport(CONFIG)
     formatter = formats.FormatSyslog(CONFIG.hostname, 'le', CONFIG.metrics.token)
 
-    LOG.logger.info('Initializing metrics')
-    s_metrics = metrics.Metrics(CONFIG.metrics, default_transport, formatter, CONFIG.debug_metrics)
-    s_metrics.start()
+    if CONFIG.metrics.enabled:
+        LOG.logger.info('Initializing metrics')
+        s_metrics = metrics.Metrics(CONFIG.metrics, default_transport, formatter, CONFIG.debug_metrics)
+        s_metrics.start()
 
     followers = []
     transports = []

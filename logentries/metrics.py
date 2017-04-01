@@ -26,7 +26,8 @@ except ImportError:
 # Main section name
 SECT = 'Main'
 # Common option prefix
-PREFIX = 'metrics-'
+METRIC_PREFIX = 'metrics-'
+SYSTEM_STAT_PREFIX = 'system-stat-'
 METRIC = 'metrics'
 
 # Configuration names
@@ -41,6 +42,7 @@ DISK = 'disk'
 SPACE = 'space'
 PROCESS = 'process'
 
+ENABLED = 'enabled'
 
 def _psutil_cpu_count():
     """Replaces cpu_count which is missing in older version."""
@@ -630,20 +632,23 @@ class MetricsConfig(object):
         for item in self.DEFAULTS:
             self.__dict__[item] = self.DEFAULTS[item]
         self.processes = []
+        self.enabled = False
 
     def load_json(self, conf):
         """Loads metrics configuration."""
         # Basic metrics
         metricDict = conf.get(METRIC)
         for item in self.DEFAULTS:
-                self.__dict__[item] = metricDict.get(PREFIX + item)
+                self.__dict__[item] = metricDict.get(METRIC_PREFIX + item)
+        self.token = metricDict.get(SYSTEM_STAT_PREFIX + TOKEN)
+        self.enabled = metricDict.get(SYSTEM_STAT_PREFIX + ENABLED)
 
     def load_ini(self, conf):
         """Loads metrics configuration."""
         # Basic metrics
         for item in self.DEFAULTS:
             try:
-                self.__dict__[item] = conf.get(SECT, PREFIX + item)
+                self.__dict__[item] = conf.get(SECT, METRIC_PREFIX + item)
             except ConfigParser.NoOptionError:
                 pass
         # Process metrics
@@ -651,13 +656,13 @@ class MetricsConfig(object):
             if section != SECT:
                 try:
                     try:
-                        token = conf.get(section, PREFIX + TOKEN)
+                        token = conf.get(section, METRIC_PREFIX + TOKEN)
                     except ConfigParser.NoOptionError:
                         try:
                             token = conf.get(section, TOKEN)
                         except ConfigParser.NoOptionError:
                             token = ''
-                    pattern = conf.get(section, PREFIX + PROCESS)
+                    pattern = conf.get(section, METRIC_PREFIX + PROCESS)
                     self.processes.append([section, pattern, token])
                 except ConfigParser.NoOptionError:
                     pass
@@ -666,16 +671,16 @@ class MetricsConfig(object):
         """Saves all metrics conficuration."""
         # Basic metrics
         for item in self.DEFAULTS:
-            conf.set(SECT, PREFIX + item, self.__dict__[item])
+            conf.set(SECT, METRIC_PREFIX + item, self.__dict__[item])
         # Process metrics
         for process in self.processes:
             try:
                 conf.add_section(process[0])
             except ConfigParser.DuplicateSectionError:
                 continue
-            conf.set(process[0], PREFIX + PROCESS, process[1])
+            conf.set(process[0], METRIC_PREFIX + PROCESS, process[1])
             if process[2]:
-                conf.set(process[0], PREFIX + TOKEN, process[2])
+                conf.set(process[0], METRIC_PREFIX + TOKEN, process[2])
 
 # Pattern matching safe values, values that does not need to be quited
 SAFE_CHARS = re.compile(r'^[a-zA-Z0-9_]*$')
