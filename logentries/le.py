@@ -809,8 +809,8 @@ def _get_log_by_name(log_name):
     logs = _get_log()
     if logs is not None:
         for item in logs['logs']:
-            if item['name'] is log_name:
-                return item
+            if item['name'] == log_name:
+                return {'log': item}
     return False
 
 
@@ -932,10 +932,10 @@ def get_or_create_logset(logset_name):
 
     logset = get_logset_by_name(logset_name)
 
-    if logset is not None:
+    if logset is None:
         logset = create_logset(logset_name)
 
-    return logset['logset']['id']
+    return logset['id']
 
 
 def get_or_create_log(logset_id, log_name):
@@ -960,7 +960,7 @@ def get_or_create_log(logset_id, log_name):
         new_log['log'].get('token', None)
 
 
-    return log_['log'].get('token', None)
+    return extract_token(log_)
 
 
 #
@@ -1190,7 +1190,7 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    if 'log' in log_ and utils.safe_get(log_, 'log', 'source_type') is 'token':
+    if 'log' in log_ and utils.safe_get(log_, 'log', 'source_type') == 'token':
         return utils.safe_get(log_, 'log', 'tokens')[0]
     return None
 
@@ -1199,6 +1199,7 @@ def construct_configured_log(configured_log):
     """Create a configured log object"""
     return {
         'log': {
+            'enabled': configured_log.enabled,
             'name': configured_log.name,
             'id': configured_log.log_id,
             'source_type': 'token',
@@ -1258,8 +1259,11 @@ def start_followers(default_transport, states):
     available_formatters = config_formatters()
 
     for log_ in logs:
-        transport = default_transport.get()
+        if log_['log']['enabled'] is not True:
+            LOG.logger.info("Skipping disabled log %s", log_['log']['name'])
+            continue;
 
+        transport = default_transport.get()
         multilog_filename = False
         log_filename = log_['log']['user_data']['le_agent_filename']
         log_name = log_['log']['name']

@@ -8,7 +8,8 @@ class ConfiguredLog(object):
 
     """Configured Log Class"""
 
-    def __init__(self, name, token, destination, path, formatter, entry_identifier):
+    def __init__(self, enabled, name, token, destination, path, formatter, entry_identifier):
+        self.enabled = enabled
         self.name = name
         self.token = token
         self.destination = destination
@@ -21,7 +22,9 @@ class ConfiguredLog(object):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return (self.name == other.name and
+            return (
+                self.enabled == other.enabled and
+                self.name == other.name and
                 self.token == other.token and
                 self.destination == other.destination and
                 self.path == other.path and
