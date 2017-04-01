@@ -33,7 +33,7 @@ class TestJsonConfig(unittest.TestCase):
             "name": "GreenLog",
             "token": "a7f9625e-0d98-11e7-9b83-6c0b84a93740",
             "path": "/var/log/GreenLog",
-            "enabled": "true"
+            "enabled": true
           }
         ]
       }
@@ -63,7 +63,7 @@ class TestJsonConfig(unittest.TestCase):
             "name": "incorrect_token",
             "token": "incorrect_token",
             "path": "/var/log/incorrect_token",
-            "enabled": "true"
+            "enabled": true
           }
         ]
       }
@@ -92,7 +92,7 @@ class TestJsonConfig(unittest.TestCase):
           {
             "name": "GreenLog",
             "token": "09da4e87-882e-41f1-bf50-5f8888888888",
-            "enabled": "true"
+            "enabled": true
           }
         ]
       }
@@ -152,7 +152,7 @@ class TestJsonConfig(unittest.TestCase):
             "name": "GreenLog",
             "token": "a7f9625e-0d98-11e7-9b83-6c0b84a93740",
             "path": "/var/log/GreenLog",
-            "enabled": "true"
+            "enabled": true
           }
         ],
         "windows-eventlog":{
@@ -186,7 +186,7 @@ class TestJsonConfig(unittest.TestCase):
             "name": "GreenLog",
             "token": "a7f9625e-0d98-11e7-9b83-6c0b84a93740",
             "path": "/var/log/GreenLog",
-            "enabled": "true"
+            "enabled": true
           }
         ],
         "windows-eventlog":{
@@ -208,11 +208,36 @@ class TestJsonConfig(unittest.TestCase):
             "name": "GreenLog",
             "token": "a7f9625e-0d98-11e7-9b83-6c0b84a93740",
             "path": "/var/log/GreenLog",
-            "enabled": "true"
+            "enabled": true
           }
         ]
       }
     }'''
+
+    json_file_with_multiple_logs = '''{
+      "config": {
+        "hostname": "hgreenland",
+        "endpoint": "data.logentries.com",
+        "user-key": "3d7946d4-0d97-11e7-9b83-6c0b84a93740",
+        "agent-key": "498fa2ba-0d97-11e7-9b83-6c0b84a93740",
+        "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
+        "logs": [
+          {
+            "name": "GreenLog",
+            "token": "a7f9625e-0d98-11e7-9b83-6c0b84a93740",
+            "path": "/var/log/GreenLog",
+            "enabled": true
+          },
+          {
+            "name": "RedLog",
+            "token": "b7f9625e-0d98-11e7-9b83-6c0b84a93740",
+            "path": "/var/log/RedLog",
+            "enabled": false
+          }
+        ]
+      }
+    }'''
+
 
     # test _load_windows_configured_logs_json() with the correct parameters given.
     @mock.patch('logging.log')
@@ -278,6 +303,19 @@ class TestJsonConfig(unittest.TestCase):
         self.assertDictEqual(result_dict, expected_dict, msg=None)
 
     # test the metrics.load_json() method when incorrect parameter names are given.
+    def test_should_not_load_metrics_with_incorrect_parameters_json(self):
+        # Read in json config file
+        d_conf = json.loads(self.json_file_incorrect_names)
+        d_configFile = d_conf['config']
+        self.metrics = metrics.MetricsConfig()
+        expected_dict = {'processes': [], 'net': None, 'space' : None, 'disk': None, 'interval': None, 'swap': None,
+                         'vcpu': None, 'cpu': None, 'mem': None, 'token': None, 'enabled': None}
+
+        self.metrics.load_json(d_configFile)
+        result_dict = self.metrics.__dict__
+
+        self.assertDictEqual(result_dict, expected_dict, msg=None)
+
     def test_should_not_load_metrics_json(self):
         # Read in json config file
         d_conf = json.loads(self.json_file_without_metrics)
@@ -300,8 +338,27 @@ class TestJsonConfig(unittest.TestCase):
         CONFIG = Config()
 
         expected_log_list = []
-        expected_configured_log = ConfiguredLog('GreenLog', 'a7f9625e-0d98-11e7-9b83-6c0b84a93740', '', '/var/log/GreenLog', '', '')
+        expected_configured_log = ConfiguredLog(True, 'GreenLog', 'a7f9625e-0d98-11e7-9b83-6c0b84a93740', '', '/var/log/GreenLog', '', '')
         expected_log_list.append(expected_configured_log)
+
+        CONFIG._load_configured_logs_json(d_configFile, mock_logger)
+        actual_log_result = CONFIG.configured_logs
+
+        self.assertCountEqual(expected_log_list, actual_log_result, msg=None)
+
+    # test the _load_configured_logs_json() method correctly pulls the right parameters and associated values.
+    @mock.patch('logging.log')
+    def test_load_correct_multiple_configured_logs_json(self, mock_logger):
+        # Read in json config file
+        d_conf = json.loads(self.json_file_with_multiple_logs)
+        d_configFile = d_conf['config']
+        CONFIG = Config()
+
+        expected_log_list = []
+        expected_log_list.append(
+            ConfiguredLog(True, 'GreenLog', 'a7f9625e-0d98-11e7-9b83-6c0b84a93740', '', '/var/log/GreenLog', '', ''))
+        expected_log_list.append(
+            ConfiguredLog(False, 'RedLog', 'b7f9625e-0d98-11e7-9b83-6c0b84a93740', '', '/var/log/RedLog', '', ''))
 
         CONFIG._load_configured_logs_json(d_configFile, mock_logger)
         actual_log_result = CONFIG.configured_logs
