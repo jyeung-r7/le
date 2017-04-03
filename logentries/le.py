@@ -1498,9 +1498,9 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
             CONFIG.load()
             break
         except FileNotFoundError:
-            logging.debug('Configuration file not found %s' % config_dir)
+            LOG.logger.debug('Configuration file not found {}, retrying in {} seconds'.format(CONFIG.config_filename,
+                                                                                              retry))
             time.sleep(retry)
-
 
     LOG.logger.info('Initializing configured log from %s' % CONFIG.config_filename)
     # Ensure all configured logs are created
