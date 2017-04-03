@@ -305,44 +305,39 @@ class Config(object):
           load_include_dirs (bool): specify if files from the include
                                     directory are loaded
         """
+        # Read configuration files from default directories
+        config_file = self.config_filename
 
-        try:
-            # Read configuration files from default directories
-            config_file = self.config_filename
+        # Read in json config file
+        with open(config_file) as data_file:
+            d_conf = json.loads(data_file.read())
+        d_configFile = d_conf[CONFIG_PARAM]
 
-            # Read in json config file
-            with open(config_file) as data_file:
-                d_conf = json.loads(data_file.read())
-            d_configFile = d_conf[CONFIG_PARAM]
+        LOG.logger.debug('Configuration file loaded: %s', config_file)
+        self._load_parameters_json(d_configFile)
+        self._configure_proxy_json(d_configFile)
+        new_suppress_ssl = d_configFile.get(SUPPRESS_SSL_PARAM)
 
-            LOG.logger.debug('Configuration file loaded: %s', config_file)
-            self._load_parameters_json(d_configFile)
-            self._configure_proxy_json(d_configFile)
-            new_suppress_ssl = d_configFile.get(SUPPRESS_SSL_PARAM)
+        if new_suppress_ssl == 'True':
+            self.suppress_ssl = new_suppress_ssl == 'True'
+        new_force_domain = d_configFile.get(FORCE_DOMAIN_PARAM)
+        if new_force_domain:
+            self.force_domain = new_force_domain
+        if self.datahub == NOT_SET:
+            self._set_datahub_settings(
+                d_configFile.get(DATAHUB_PARAM), should_die=False)
+        if self.system_stats_token == NOT_SET:
+            system_stats_token_str = d_configFile.get(SYSSTAT_TOKEN_PARAM)
+            if system_stats_token_str != '':
+                self.system_stats_token = system_stats_token_str
+        if self.state_file == NOT_SET:
+            state_file_str = d_configFile.get(STATE_FILE_PARAM)
+            if state_file_str:
+                self.state_file = state_file_str
 
-            if new_suppress_ssl == 'True':
-                self.suppress_ssl = new_suppress_ssl == 'True'
-            new_force_domain = d_configFile.get(FORCE_DOMAIN_PARAM)
-            if new_force_domain:
-                self.force_domain = new_force_domain
-            if self.datahub == NOT_SET:
-                self._set_datahub_settings(
-                    d_configFile.get(DATAHUB_PARAM), should_die=False)
-            if self.system_stats_token == NOT_SET:
-                system_stats_token_str = d_configFile.get(SYSSTAT_TOKEN_PARAM)
-                if system_stats_token_str != '':
-                    self.system_stats_token = system_stats_token_str
-            if self.state_file == NOT_SET:
-                state_file_str = d_configFile.get(STATE_FILE_PARAM)
-                if state_file_str:
-                    self.state_file = state_file_str
-
-            self.metrics.load_json(d_configFile)
-            self._load_configured_logs_json(d_configFile, LOG.logger)
-            self._load_windows_configured_json(d_configFile, LOG.logger)
-
-        except ValueError as e:
-            LOG.logger.error("Error: %s JSON configuration not formatted correctly %s", config_file, e)
+        self.metrics.load_json(d_configFile)
+        self._load_configured_logs_json(d_configFile, LOG.logger)
+        self._load_windows_configured_json(d_configFile, LOG.logger)
 
         return True
 
