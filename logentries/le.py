@@ -779,7 +779,10 @@ def generate_headers():
 def _try_get_request(url, headers):
     """Generic rest GET request"""
     try:
-        return requests.request('GET', url, headers=headers)
+        if CONFIG.use_ca_provided is True:
+            return requests.request('GET', url, headers=headers, verify=utils.default_cert_file_name(CONFIG))
+        else:
+            return requests.request('GET', url, headers=headers)
     except (requests.RequestException, ValueError) as error:
         utils.die(error.message)
 
