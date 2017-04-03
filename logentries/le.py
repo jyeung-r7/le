@@ -391,16 +391,16 @@ class Transport(object):
     """Encapsulates simple connection to a remote host. The connection may be
     encrypted. Each communication is started with the preamble."""
 
-    def __init__(self, endpoint, port, use_ssl, preamble, debug_transport_events, proxy, use_ca_provided):
+    def __init__(self, endpoint, port, use_ssl, preamble, debug_transport_events, proxy, certs):
         # Copy transport configuration
         self.endpoint = endpoint
         self.port = port
         self.use_ssl = use_ssl
+        self._certs = certs
         self.preamble = preamble
         self._entries = queue.Queue(SEND_QUEUE_SIZE)
         self._socket = None # Socket with optional TLS encyption
         self._debug_transport_events = debug_transport_events
-        self._use_ca_provided = use_ca_provided
         self._shutdown = False # Shutdown flag - terminates the networking thread
 
         # proxy setup
@@ -424,18 +424,9 @@ class Transport(object):
             LOG.logger.info("Using proxy with proxy_type: %s, proxy-url: %s, proxy-port: %s",
                      proxy_type_str, self._proxy_url, self._proxy_port)
 
-        # Get certificate name
-        if not self._use_ca_provided:
-            cert_name = utils.system_cert_file()
-            if cert_name is None:
-                cert_name = utils.default_cert_file(CONFIG)
-        else:
-            cert_name = utils.default_cert_file(CONFIG)
-
-        if use_ssl and not cert_name:
+        if use_ssl and not self._certs:
             utils.die('Cannot get default certificate file name to provide connection over SSL!')
             # XXX Do we need to die here?
-        self._certs = cert_name
 
         # Start asynchronous worker
         self._worker = threading.Thread(target=self.run)
@@ -612,9 +603,9 @@ class Transport(object):
 
 class DefaultTransport(object):
     """Default Transport Class"""
-    def __init__(self, xconfig):
+    def __init__(self, config):
         self._transport = None
-        self._config = xconfig
+        self._config = config
 
     def get(self):
         """Get transport"""
@@ -636,7 +627,7 @@ class DefaultTransport(object):
                 use_ssl = False
             self._transport = Transport(
                 endpoint, port, use_ssl, '', self._config.debug_transport_events,
-                (self._config.proxy_type, self._config.proxy_url, self._config.proxy_port), self._config.use_ca_provided)
+                (self._config.proxy_type, self._config.proxy_url, self._config.proxy_port), utils.default_cert_file(self._config))
         return self._transport
 
     def close(self):
