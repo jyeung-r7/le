@@ -18,7 +18,7 @@ class TestJsonConfig(unittest.TestCase):
         "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
         "metrics": {
           "system-stat-token": "627d011e-0d97-11e7-9b83-6c0b84a93740",
-          "system-stat-enabled": "true",
+          "system-stat-enabled": true,
           "metrics-interval": "60s",
           "metrics-cpu": "system",
           "metrics-vcpu": "core",
@@ -48,7 +48,7 @@ class TestJsonConfig(unittest.TestCase):
         "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
         "metrics": {
           "system-stat-token": "627d011e-0d97-11e7-9b83-6c0b84a93740",
-          "system-stat-enabled": "true",
+          "system-stat-enabled": true,
           "metrics-interval": "60s",
           "metrics-cpu": "system",
           "metrics-vcpu": "core",
@@ -78,7 +78,7 @@ class TestJsonConfig(unittest.TestCase):
         "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
         "metrics": {
           "system-stat-token": "627d011e-0d97-11e7-9b83-6c0b84a93740",
-          "system-stat-enabled": "true",
+          "system-stat-enabled": true,
           "metrics-interval": "60s",
           "metrics-cpu": "system",
           "metrics-vcpu": "core",
@@ -107,7 +107,7 @@ class TestJsonConfig(unittest.TestCase):
         "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
         "metrics": {
           "system-stat-token-false": "627d011e-0d97-11e7-9b83-6c0b84a93740",
-          "system-stat-enabled-false": "true",
+          "system-stat-enabled-false": true,
           "metrics-false": "60s",
           "metrics-false": "system",
           "metrics-false": "core",
@@ -122,7 +122,7 @@ class TestJsonConfig(unittest.TestCase):
             "name_false": "GreenLog",
             "token_false": "09da4e87-882e-41f1-bf50-5f8888888888",
             "path_false": "/var/log/incorrect_token",
-            "enabled_false": "true"
+            "enabled_false": true
           }
         ]
       }
@@ -137,7 +137,7 @@ class TestJsonConfig(unittest.TestCase):
         "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
         "metrics": {
           "system-stat-token": "627d011e-0d97-11e7-9b83-6c0b84a93740",
-          "system-stat-enabled": "true",
+          "system-stat-enabled": true,
           "metrics-interval": "60s",
           "metrics-cpu": "system",
           "metrics-vcpu": "core",
@@ -171,7 +171,7 @@ class TestJsonConfig(unittest.TestCase):
         "api-key": "555e7094-0d97-11e7-9b83-6c0b84a93740",
         "metrics": {
           "system-stat-token": "627d011e-0d97-11e7-9b83-6c0b84a93740",
-          "system-stat-enabled": "true",
+          "system-stat-enabled": true,
           "metrics-interval": "60s",
           "metrics-cpu": "system",
           "metrics-vcpu": "core",
@@ -288,14 +288,14 @@ class TestJsonConfig(unittest.TestCase):
 
 
     # test the metrics.load_json() method correctly pulls the right parameters and associated values.
-    def test_should_metrics_json(self):
+    def test_should_load_metrics_json(self):
         # Read in json config file
         d_conf = json.loads(self.json_file)
         d_configFile = d_conf['config']
         self.metrics = metrics.MetricsConfig()
         expected_dict = {'processes': [], 'net': 'sum eth0', 'space' : '/', 'disk': 'sum sda4 sda5', 'interval': '60s',
                          'swap': 'system', 'vcpu': 'core', 'cpu': 'system', 'mem': 'system',
-                         'token': '627d011e-0d97-11e7-9b83-6c0b84a93740', 'enabled': 'true'}
+                         'token': '627d011e-0d97-11e7-9b83-6c0b84a93740', 'enabled': True}
 
         self.metrics.load_json(d_configFile)
         result_dict = self.metrics.__dict__

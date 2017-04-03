@@ -952,7 +952,7 @@ def get_or_create_log(logset_id, log_name):
     if not log_:
         # Try to create the log
         new_log = create_log(logset_id, log_name, '', do_follow=False, source='token')
-        new_log['log'].get('token', None)
+        log_ = new_log
 
 
     return extract_token(log_)
