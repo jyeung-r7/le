@@ -790,8 +790,8 @@ class Config(object):
                 if PATH_PARAM in section:
                     path = section.get(PATH_PARAM)
                 if path is None:
-                    logger.debug("Not following logs for application `%s' as `%s' "
-                                  "parameter is not specified", name, path)
+                    logger.warn("Not following logs for application `%s' as `%s' "
+                                  "parameter is not specified", name, PATH_PARAM)
                     continue
 
                 destination = self._try_load_param_json(section, DESTINATION_PARAM)
@@ -826,7 +826,7 @@ class Config(object):
                 try:
                     path = conf.get(name, PATH_PARAM)
                 except ConfigParser.NoOptionError:
-                    LOG.logger.debug("Not following logs for application `%s' as `%s' "
+                    LOG.logger.warn("Not following logs for application `%s' as `%s' "
                                   "parameter is not specified", name, PATH_PARAM)
                     continue
 
