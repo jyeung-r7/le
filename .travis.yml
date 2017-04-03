@@ -1,13 +1,9 @@
 language: python
 python:
-  - "2.6"
-  - "2.7"
-  - "3.2"
-  - "3.3"
   - "3.4"
-  - "3.5"
-# command to install dependencies
+# Command to install dependencies
 install:
-  - pip install pylint
+  - pip install -r test/requirements.pip
 # command to run tests
-script: pylint logentries
+script:
+  - python -m unittest discover test/unittests
