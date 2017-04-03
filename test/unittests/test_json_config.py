@@ -402,7 +402,7 @@ class TestJsonConfig(unittest.TestCase):
     def test_load_configured_incorrect_path_logs_json_path(self, mock_logger):
         CONFIG = Config()
         name = 'GreenLog'
-        path = None
+        path = 'path'
 
         # Read in json config file
         d_conf = json.loads(self.json_file_no_path)
@@ -411,7 +411,7 @@ class TestJsonConfig(unittest.TestCase):
         CONFIG._load_configured_logs_json(d_configFile, mock_logger)
 
         # result matches error message
-        mock_logger.debug.assert_called_with("Not following logs for application `%s' as `%s' "
+        mock_logger.warn.assert_called_with("Not following logs for application `%s' as `%s' "
          "parameter is not specified", name, path)
 
 if __name__ == '__main__':
