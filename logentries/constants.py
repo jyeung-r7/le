@@ -202,5 +202,5 @@ EXIT_TERMINATED = 5  # Terminated by user (Ctrl+C)
 
 TOKEN_PARAM = 'token'
 DESTINATION_PARAM = 'destination'
+ENABLED_PARAM = 'enabled'
 WINDOWS_TOKEN_PARAM = 'token'
-WINDOWS_ENABLED = 'enabled'

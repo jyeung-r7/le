@@ -13,7 +13,7 @@ import logentries.utils as utils
 import logentries.log
 from logentries.configured_log import ConfiguredLog
 from logentries.constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM, \
-    WINDOWS_TOKEN_PARAM, WINDOWS_ENABLED
+    WINDOWS_TOKEN_PARAM, ENABLED_PARAM
 
 DEFAULT_USER_KEY = NOT_SET
 DEFAULT_AGENT_KEY = NOT_SET
@@ -748,12 +748,12 @@ class Config(object):
             Loads configured windows parameters from the configuration file.
             These parameters contain the token and settings for following windows event logs.
         """
-        self.windows_eventlogs = {WINDOWS_ENABLED: False, WINDOWS_TOKEN_PARAM: None}
+        self.windows_eventlogs = {ENABLED_PARAM: False, WINDOWS_TOKEN_PARAM: None}
 
         # check if windows event log is specified in the configuration file
         if WINDOWS_LOGS in conf:
             windows_conf = conf.get(WINDOWS_LOGS)
-            windows_enabled = windows_conf.get(WINDOWS_ENABLED)
+            windows_enabled = windows_conf.get(ENABLED_PARAM)
             wtoken = windows_conf.get(WINDOWS_TOKEN_PARAM)
             if wtoken:
                 token = utils.uuid_parse(wtoken)
@@ -761,7 +761,7 @@ class Config(object):
                     logger.warn("Invalid log token `%s' in application `%s'.",
                                 token, WINDOWS_LOGS)
                 else:
-                    self.windows_eventlogs[WINDOWS_ENABLED] = windows_enabled
+                    self.windows_eventlogs[ENABLED_PARAM] = windows_enabled
                     self.windows_eventlogs[WINDOWS_TOKEN_PARAM] = token
 
 
@@ -790,16 +790,16 @@ class Config(object):
                 if PATH_PARAM in section:
                     path = section.get(PATH_PARAM)
                 if path is None:
-                    logger.debug("Not following logs for application `%s' as `%s' "
-                                  "parameter is not specified", name, path)
+                    logger.warn("Not following logs for application `%s' as `%s' "
+                                  "parameter is not specified", name, PATH_PARAM)
                     continue
 
                 destination = self._try_load_param_json(section, DESTINATION_PARAM)
                 formatter = self._try_load_param_json(section, FORMATTER_PARAM)
                 entry_identifier = self._try_load_param_json(section, ENTRY_IDENTIFIER_PARAM)
+                enabled = self._try_load_param_json(section, ENABLED_PARAM)
 
-                configured_log = ConfiguredLog(name, token,
-                                               destination, path, formatter, entry_identifier)
+                configured_log = ConfiguredLog(enabled, name, token, destination, path, formatter, entry_identifier)
                 self.configured_logs.append(configured_log)
 
 
@@ -826,7 +826,7 @@ class Config(object):
                 try:
                     path = conf.get(name, PATH_PARAM)
                 except ConfigParser.NoOptionError:
-                    LOG.logger.debug("Not following logs for application `%s' as `%s' "
+                    LOG.logger.warn("Not following logs for application `%s' as `%s' "
                                   "parameter is not specified", name, PATH_PARAM)
                     continue
 
@@ -834,7 +834,7 @@ class Config(object):
                 formatter = self._try_load_param_ini(conf, name, FORMATTER_PARAM)
                 entry_identifier = self._try_load_param_ini(conf, name, ENTRY_IDENTIFIER_PARAM)
 
-                configured_log = ConfiguredLog(name, token,
+                configured_log = ConfiguredLog(True, name, token,
                                                destination, path, formatter, entry_identifier)
                 self.configured_logs.append(configured_log)
 

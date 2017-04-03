@@ -391,16 +391,16 @@ class Transport(object):
     """Encapsulates simple connection to a remote host. The connection may be
     encrypted. Each communication is started with the preamble."""
 
-    def __init__(self, endpoint, port, use_ssl, preamble, debug_transport_events, proxy, use_ca_provided):
+    def __init__(self, endpoint, port, use_ssl, preamble, debug_transport_events, proxy, certs):
         # Copy transport configuration
         self.endpoint = endpoint
         self.port = port
         self.use_ssl = use_ssl
+        self._certs = certs
         self.preamble = preamble
         self._entries = queue.Queue(SEND_QUEUE_SIZE)
         self._socket = None # Socket with optional TLS encyption
         self._debug_transport_events = debug_transport_events
-        self._use_ca_provided = use_ca_provided
         self._shutdown = False # Shutdown flag - terminates the networking thread
 
         # proxy setup
@@ -424,18 +424,9 @@ class Transport(object):
             LOG.logger.info("Using proxy with proxy_type: %s, proxy-url: %s, proxy-port: %s",
                      proxy_type_str, self._proxy_url, self._proxy_port)
 
-        # Get certificate name
-        if not self._use_ca_provided:
-            cert_name = utils.system_cert_file()
-            if cert_name is None:
-                cert_name = utils.default_cert_file(CONFIG)
-        else:
-            cert_name = utils.default_cert_file(CONFIG)
-
-        if use_ssl and not cert_name:
+        if use_ssl and not self._certs:
             utils.die('Cannot get default certificate file name to provide connection over SSL!')
             # XXX Do we need to die here?
-        self._certs = cert_name
 
         # Start asynchronous worker
         self._worker = threading.Thread(target=self.run)
@@ -612,9 +603,9 @@ class Transport(object):
 
 class DefaultTransport(object):
     """Default Transport Class"""
-    def __init__(self, xconfig):
+    def __init__(self, config):
         self._transport = None
-        self._config = xconfig
+        self._config = config
 
     def get(self):
         """Get transport"""
@@ -636,7 +627,7 @@ class DefaultTransport(object):
                 use_ssl = False
             self._transport = Transport(
                 endpoint, port, use_ssl, '', self._config.debug_transport_events,
-                (self._config.proxy_type, self._config.proxy_url, self._config.proxy_port), self._config.use_ca_provided)
+                (self._config.proxy_type, self._config.proxy_url, self._config.proxy_port), utils.default_cert_file(self._config))
         return self._transport
 
     def close(self):
@@ -779,7 +770,10 @@ def generate_headers():
 def _try_get_request(url, headers):
     """Generic rest GET request"""
     try:
-        return requests.request('GET', url, headers=headers)
+        if CONFIG.use_ca_provided is True:
+            return requests.request('GET', url, headers=headers, verify=utils.default_cert_file_name(CONFIG))
+        else:
+            return requests.request('GET', url, headers=headers)
     except (requests.RequestException, ValueError) as error:
         utils.die(error.message)
 
@@ -809,8 +803,8 @@ def _get_log_by_name(log_name):
     logs = _get_log()
     if logs is not None:
         for item in logs['logs']:
-            if item['name'] is log_name:
-                return item
+            if item['name'] == log_name:
+                return {'log': item}
     return False
 
 
@@ -921,7 +915,7 @@ def get_logset_by_name(logset_name):
     if logsets is not None:
         for item in logsets['logsets']:
             if item['name'] == logset_name:
-                return item
+                return {'logset': item}
     return None
 
 
@@ -932,7 +926,8 @@ def get_or_create_logset(logset_name):
 
     logset = get_logset_by_name(logset_name)
 
-    if logset is not None:
+    # If logset does not exist, create the logset
+    if logset is None:
         logset = create_logset(logset_name)
 
     return logset['logset']['id']
@@ -960,7 +955,7 @@ def get_or_create_log(logset_id, log_name):
         new_log['log'].get('token', None)
 
 
-    return log_['log'].get('token', None)
+    return extract_token(log_)
 
 
 #
@@ -1190,7 +1185,7 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    if 'log' in log_ and utils.safe_get(log_, 'log', 'source_type') is 'token':
+    if 'log' in log_ and utils.safe_get(log_, 'log', 'source_type') == 'token':
         return utils.safe_get(log_, 'log', 'tokens')[0]
     return None
 
@@ -1199,6 +1194,7 @@ def construct_configured_log(configured_log):
     """Create a configured log object"""
     return {
         'log': {
+            'enabled': configured_log.enabled,
             'name': configured_log.name,
             'id': configured_log.log_id,
             'source_type': 'token',
@@ -1258,8 +1254,11 @@ def start_followers(default_transport, states):
     available_formatters = config_formatters()
 
     for log_ in logs:
-        transport = default_transport.get()
+        if log_['log']['enabled'] is not True:
+            LOG.logger.info("Skipping disabled log %s", log_['log']['name'])
+            continue;
 
+        transport = default_transport.get()
         multilog_filename = False
         log_filename = log_['log']['user_data']['le_agent_filename']
         log_name = log_['log']['name']
@@ -1513,9 +1512,10 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
     default_transport = DefaultTransport(CONFIG)
     formatter = formats.FormatSyslog(CONFIG.hostname, 'le', CONFIG.metrics.token)
 
-    LOG.logger.info('Initializing metrics')
-    s_metrics = metrics.Metrics(CONFIG.metrics, default_transport, formatter, CONFIG.debug_metrics)
-    s_metrics.start()
+    if CONFIG.metrics.enabled is True and CONFIG.metrics is not None:
+        LOG.logger.info('Initializing metrics')
+        s_metrics = metrics.Metrics(CONFIG.metrics, default_transport, formatter, CONFIG.debug_metrics)
+        s_metrics.start()
 
     followers = []
     transports = []
