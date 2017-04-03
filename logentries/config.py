@@ -41,9 +41,9 @@ HOSTNAME_PARAM = 'hostname'
 PATH_PARAM = 'path'
 INCLUDE_PARAM = 'include'
 PULL_SERVER_SIDE_CONFIG_PARAM = 'pull-server-side-config'
-PROXY_TYPE_PARAM = "proxy-type"
-PROXY_URL_PARAM = "proxy-url"
-PROXY_PORT_PARAM = "proxy-port"
+PROXY_TYPE_PARAM = 'proxy-type'
+PROXY_URL_PARAM = 'proxy-url'
+PROXY_PORT_PARAM = 'proxy-port'
 KEY_LEN = 36
 LE_DEFAULT_SSL_PORT = 20000
 LE_DEFAULT_NON_SSL_PORT = 10000
@@ -596,7 +596,7 @@ class Config(object):
             # Verify that only one wildcard is in pathname
             if pname.count('*') > 1:
                 if not cmd_line:
-                    LOG.logger.error("Error: More then one wildcard * detected in pathname")
+                    LOG.logger.error("Error: More than one wildcard * detected in pathname")
                     return False
                 else:
                     utils.die("\nError: Only one wildcard * allowed\n" + MULTILOG_USAGE, EXIT_OK)
