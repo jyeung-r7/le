@@ -1499,7 +1499,7 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
             break
         except Exception as error:
             LOG.logger.debug('Failed to load configuration file, retrying in {} seconds : {}'.format(retry, error))
-            time.sleep(retry)
+            shutdown_evt.wait(retry)
 
     LOG.logger.info('Initializing configured log from %s' % CONFIG.config_filename)
     # Ensure all configured logs are created
@@ -1533,7 +1533,7 @@ def monitor_from_local_config(args, shutdown_evt=threading.Event(), config_dir=N
         while not terminate.terminate or not shutdown_evt.is_set():
             save_state(CONFIG.state_file, followers)
 
-            time.sleep(1)
+            shutdown_evt.wait(1)
     except KeyboardInterrupt:
         pass
 
